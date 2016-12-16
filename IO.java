@@ -9,6 +9,7 @@ public class IO {
     private static final String BAD_FILE= "file could not been read or write into";
     private static final String FILE_NOT_EXISTS = "enter another file, since the path was wrong";
     private static final String XML = ".xml";
+    private static final String TOKEN_XML = "T.xml";
     private static final String DOT = "\\w++\\.";
     private static final String JACK= DOT+"jack";
     private static final Pattern JACK_PATTERN =Pattern.compile(JACK);
@@ -76,8 +77,11 @@ public class IO {
             {
                 //read the file and parse it
                 readAndParse(reader,jackList.get(j).getName());
-                writeToXmlFile(writer);
-
+                // todo need to write to xml after the tokenizer and the complication
+                for (int i = 0; i < Tokenizer.getXmlLines().size(); i++) {
+                    writer.write(Tokenizer.getXmLines().get(i) + NEW_LINE); //write the token output
+                }
+                compileAllFiles(Tokenizer.getXmlLines(),outputFileName);
             } catch (IOException e) {
                 System.out.println(BAD_FILE);
             }
@@ -85,14 +89,30 @@ public class IO {
     }
 
     /**
-     * write in the output file the asm text that been translated
-     * @param writer a bufferedWriter
+     * compile all files and write a xml file for each and every of them
+     * @param listOfTokens the Tokenizer output
+     * @param location the location of the output
      */
-    private static void writeToXmlFile(BufferedWriter writer){
-        //write the xml code to an output file
-        for (int i = 0; i < CompilationEngine.getXmlLines().size(); i++) {
-            writer.write(CompilationEngine.getXmLines().get(i) + NEW_LINE);
-        }
+    private static void compileAllFiles(ArrayList<String> listOfTokens,String location){
+            // change the output location
+            String outputFileName=location.substring(0,location.length()-FIVE);
+            outputFileName+=XML;
+
+            try(FileWriter vmFile = new FileWriter(outputFileName);
+                BufferedWriter writer = new BufferedWriter(vmFile)){
+                // compile the Tokenizer output
+                CompilationEngine compiler = new CompilationEngine(listOfTokens);
+                compiler.compileClass();
+                //write to a xml file
+                for(int i=0;i<compiler.getXmlLines.size();i++){
+                    writer.write(listOfTokens.get(i) + NEW_LINE);
+                }
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+
     }
 
     /**
@@ -104,10 +124,10 @@ public class IO {
         String location= file.getAbsolutePath();
         if(file.isFile()){ // if the there is only one file
             location=location.substring(0,location.length()-FIVE);
-            location+= XML;
+            location+=TOKEN_XML;
         }
         else{ //if it is a directory
-            location+=SLASH+file.getName()+XML;
+            location+=SLASH+file.getName()+TOKEN_XML;
         }
         return location;
     }
