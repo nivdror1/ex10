@@ -16,7 +16,7 @@ public class CompilationEngine {
     private static final Pattern EMPTY_LINE_PATTERN= Pattern.compile(EMPTY_LINE);
 
     private static final String KEYWORD= "<keyword>";
-    private static final Pattern  KEYW=">";
+    //private static final Pattern  KEYW=">";
 
     /** the tokens input*/
     private ArrayList<String> tokens;

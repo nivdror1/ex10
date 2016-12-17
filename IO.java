@@ -78,10 +78,10 @@ public class IO {
                 //read the file and parse it
                 readAndParse(reader,jackList.get(j).getName());
                 // todo need to write to xml after the tokenizer and the complication
-                for (int i = 0; i < Tokenizer.getXmlLines().size(); i++) {
-                    writer.write(Tokenizer.getXmLines().get(i) + NEW_LINE); //write the token output
-                }
-                compileAllFiles(Tokenizer.getXmlLines(),outputFileName);
+//     TODO           for (int i = 0; i < Tokenizer.getXmlLines().size(); i++) {
+//                    writer.write(Tokenizer.getXmLines().get(i) + NEW_LINE); //write the token output
+//                }
+//                compileAllFiles(Tokenizer.getXmlLines(),outputFileName);
             } catch (IOException e) {
                 System.out.println(BAD_FILE);
             }
@@ -104,9 +104,10 @@ public class IO {
                 CompilationEngine compiler = new CompilationEngine(listOfTokens);
                 compiler.compileClass();
                 //write to a xml file
-                for(int i=0;i<compiler.getXmlLines.size();i++){
-                    writer.write(listOfTokens.get(i) + NEW_LINE);
-                }
+                
+//                for(int i=0;i<compiler.getXmlLines.size();i++){	TODO
+//                    writer.write(listOfTokens.get(i) + NEW_LINE);
+//                }
             }
             catch (IOException e)
             {
@@ -140,12 +141,21 @@ public class IO {
      */
     private static void readAndParse(BufferedReader reader, String className) throws IOException {
         Tokenizer tokenizer = new Tokenizer(); //define a new tokenizer
-        String text;
-        while ((text = reader.readLine()) != null) // add the lines to the container
-        {
-            tokenizer.getJackLines().add(text);
+        
+        try{
+        	tokenizer.readCodeFile(reader);
         }
-        tokenizer.tokenizeJackFile(className); // parse the vm text
+        catch(Exception e){
+        	System.out.println("Fail...:(");
+        }
+        
+        
+//        String text;
+//        while ((text = reader.readLine()) != null) // add the lines to the container
+//        {
+//            tokenizer.getJackLines().add(text);
+//        }
+//        tokenizer.tokenizeJackFile(className); // parse the vm text
     }
 
 
