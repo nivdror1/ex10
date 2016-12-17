@@ -1,3 +1,5 @@
+import javax.print.Doc;
+import org.w3c.dom.Document;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -16,7 +18,6 @@ public class CompilationEngine {
     private static final Pattern EMPTY_LINE_PATTERN= Pattern.compile(EMPTY_LINE);
 
     private static final String KEYWORD= "<keyword>";
-    private static final Pattern  KEYW=">";
 
     /** the tokens input*/
     private ArrayList<String> tokens;
@@ -24,26 +25,29 @@ public class CompilationEngine {
     private Stack<String> blocks; //todo find a better name
     /** the current line being compiled*/
     private String currentLine;
-    /** the output xml lines*/
-    private ArrayList<String> xmlLines;
+
     /** the current matcher*/
     private Matcher curMatcher;
 
+    private Document xmlDoc;
+
     /** constructor*/
-    public CompilationEngine(ArrayList<String> tokens){
+    public CompilationEngine(ArrayList<String> tokens, Document xmlDoc){
         this.tokens=tokens;
         this.blocks= new Stack<>();
         this.currentLine=tokens.get(1); //skipping the token at the beginning of the input
-        this.xmlLines= new ArrayList<>();
+        this.xmlDoc=xmlDoc;
     }
 
     /**
-     * get the xml lines
-     * @return the xml lines
+     * get the xml document
+     * @return the xml document
      */
-    public ArrayList<String> getXmlLines(){
-        return this.xmlLines;
+    public Document getXmlDoc(){
+        return this.xmlDoc;
     }
+
+
     /**
      * advance the current line if possible
      * @return the current line

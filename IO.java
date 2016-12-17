@@ -1,4 +1,9 @@
-import javax.swing.filechooser.FileNameExtensionFilter;
+import com.sun.org.apache.xml.internal.serialize.OutputFormat;
+import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
+import org.w3c.dom.Document;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -67,23 +72,21 @@ public class IO {
      * read all of the vm files
      * @param jackList an array list of vm files
      */
-    private static void readAndWriteAllJackFiles(ArrayList <File> jackList){
-        for (int j=0;j<jackList.size();j++) {
+    private static void readAndWriteAllJackFiles(ArrayList <File> jackList) {
+        for (int j = 0; j < jackList.size(); j++) {
             String outputFileName = setOutputFileName(jackList.get(j));
             try (FileReader jackFile = new FileReader(jackList.get(j));// define the BufferReader and BufferWriter
-                 BufferedReader reader = new BufferedReader(jackFile);
-                 FileWriter vmFile = new FileWriter(outputFileName);
-                 BufferedWriter writer = new BufferedWriter(vmFile))
-            {
-                //read the file and parse it
-                readAndParse(reader,jackList.get(j).getName());
-                // todo need to write to xml after the tokenizer and the complication
-                for (int i = 0; i < Tokenizer.getXmlLines().size(); i++) {
-                    writer.write(Tokenizer.getXmLines().get(i) + NEW_LINE); //write the token output
-                }
-                compileAllFiles(Tokenizer.getXmlLines(),outputFileName);
+                 BufferedReader reader = new BufferedReader(jackFile)) {
+
+                //read the file and tokenize it
+                readAndTokenize(reader, jackList.get(j).getAbsolutePath());
+
+                //compile
+                compileFile(Tokenizer.getXmlLines(), outputFileName);
             } catch (IOException e) {
-                System.out.println(BAD_FILE);
+                e.printStackTrace();
+            }catch (ParserConfigurationException e2){
+                e2.printStackTrace();
             }
         }
     }
@@ -93,23 +96,24 @@ public class IO {
      * @param listOfTokens the Tokenizer output
      * @param location the location of the output
      */
-    private static void compileAllFiles(ArrayList<String> listOfTokens,String location){
+    private static void compileFile(ArrayList<String> listOfTokens,String location){
             // change the output location
             String outputFileName=location.substring(0,location.length()-FIVE);
             outputFileName+=XML;
 
-            try(FileWriter vmFile = new FileWriter(outputFileName);
-                BufferedWriter writer = new BufferedWriter(vmFile)){
+            try{
+                //create the xml document
+                Document xmlDoc= createXmlDoc();
                 // compile the Tokenizer output
-                CompilationEngine compiler = new CompilationEngine(listOfTokens);
+                CompilationEngine compiler = new CompilationEngine(listOfTokens,xmlDoc);
                 compiler.compileClass();
-                //write to a xml file
-                for(int i=0;i<compiler.getXmlLines.size();i++){
-                    writer.write(listOfTokens.get(i) + NEW_LINE);
-                }
+                xmlDoc=compiler.getXmlDoc();
+
+                // serialize to xml file
+                writeXml(outputFileName,xmlDoc);
+
             }
-            catch (IOException e)
-            {
+            catch (ParserConfigurationException e){
                 e.printStackTrace();
             }
 
@@ -133,22 +137,62 @@ public class IO {
     }
 
     /**
-     * read and parse a specific file
+     * read and tokenize a specific file
      * @param reader a bufferReader
-     * @param className the current class name
+     * @param outputFileName the current name of the output file
      * @throws IOException
      */
-    private static void readAndParse(BufferedReader reader, String className) throws IOException {
+    private static void readAndTokenize(BufferedReader reader, String outputFileName)
+            throws IOException, ParserConfigurationException {
+        //create a xml document
+        Document xmlDoc = createXmlDoc();
+
         Tokenizer tokenizer = new Tokenizer(); //define a new tokenizer
         String text;
         while ((text = reader.readLine()) != null) // add the lines to the container
         {
             tokenizer.getJackLines().add(text);
         }
-        tokenizer.tokenizeJackFile(className); // parse the vm text
+        xmlDoc= tokenizer.tokenizeJackFile(xmlDoc); // tokenize the vm text
+        writeXml(outputFileName,xmlDoc);
     }
 
+    /**
+     * serialize the xml file
+     * @param outputFileName the name and location of the output file
+     * @param xmlDoc the document to serialize
+     */
+    private static void writeXml(String outputFileName, Document xmlDoc){
+        //set output format
+        OutputFormat outFormat= new OutputFormat(xmlDoc);
+        outFormat.setIndenting(true);
 
+        File outputFile= new File(outputFileName);
+        try (FileOutputStream outStream = new FileOutputStream(outputFile)){
+            //create a xml serializer
+            XMLSerializer serializer= new XMLSerializer(outStream,outFormat);
+            // serialize the xml file
+            serializer.serialize(xmlDoc);
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+    }
 
+    /**
+     * create the xml document
+     * @return the xml document
+     * @throws ParserConfigurationException
+     */
+    private static Document createXmlDoc() throws ParserConfigurationException{
+
+        // create a new document builder factory
+        DocumentBuilderFactory docBFactory = DocumentBuilderFactory.newInstance();
+        // create a document builder
+        DocumentBuilder docBuilder = docBFactory.newDocumentBuilder();
+        //create a document
+        Document xmlDoc= docBuilder.newDocument();
+        return xmlDoc;
+    }
 
 }
