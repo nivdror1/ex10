@@ -1,6 +1,10 @@
 import com.sun.org.apache.xml.internal.serialize.OutputFormat;
 import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
+import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationsException;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import javax.print.Doc;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -82,7 +86,7 @@ public class IO {
                 readAndTokenize(reader, jackList.get(j).getAbsolutePath());
 
                 //compile
-                compileFile(Tokenizer.getXmlLines(), outputFileName);
+                compileFile( outputFileName);
             } catch (IOException e) {
                 e.printStackTrace();
             }catch (ParserConfigurationException e2){
@@ -93,29 +97,37 @@ public class IO {
 
     /**
      * compile all files and write a xml file for each and every of them
-     * @param listOfTokens the Tokenizer output
      * @param location the location of the output
      */
-    private static void compileFile(ArrayList<String> listOfTokens,String location){
-            // change the output location
-            String outputFileName=location.substring(0,location.length()-FIVE);
-            outputFileName+=XML;
+    private static void compileFile(String location){
+        // change the output location
+        String outputFileName=location.substring(0,location.length()-FIVE);
+        outputFileName+=XML;
 
-            try{
-                //create the xml document
-                Document xmlDoc= createXmlDoc();
-                // compile the Tokenizer output
-                CompilationEngine compiler = new CompilationEngine(listOfTokens,xmlDoc);
-                compiler.compileClass();
-                xmlDoc=compiler.getXmlDoc();
+        try{
+            Document inputXml= createXmlDoc();
+            inputXml= getDocumentBuilder().parse(location);
 
-                // serialize to xml file
-                writeXml(outputFileName,xmlDoc);
+            //create the xml document
+            Document xmlDoc= createXmlDoc();
+            // compile the Tokenizer output
+            CompilationEngine compiler = new CompilationEngine(inputXml, xmlDoc);
+            compiler.compileClass();
+            xmlDoc=compiler.getXmlDoc();
 
-            }
-            catch (ParserConfigurationException e){
-                e.printStackTrace();
-            }
+            // serialize to xml file
+            writeXml(outputFileName,xmlDoc);
+
+        }
+        catch (ParserConfigurationException e){
+            e.printStackTrace();
+        }
+        catch (SAXException e2){
+            e2.printStackTrace();
+        }
+        catch (IOException e3){
+            e3.printStackTrace();
+        }
 
     }
 
@@ -185,14 +197,21 @@ public class IO {
      * @throws ParserConfigurationException
      */
     private static Document createXmlDoc() throws ParserConfigurationException{
+        DocumentBuilder builder= getDocumentBuilder();
+        //create a document
+        return builder.newDocument();
+    }
 
+    /**
+     * get document builder
+     * @return the document builder
+     * @throws ParserConfigurationException
+     */
+    private static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException{
         // create a new document builder factory
         DocumentBuilderFactory docBFactory = DocumentBuilderFactory.newInstance();
         // create a document builder
-        DocumentBuilder docBuilder = docBFactory.newDocumentBuilder();
-        //create a document
-        Document xmlDoc= docBuilder.newDocument();
-        return xmlDoc;
+        return docBFactory.newDocumentBuilder();
     }
 
 }

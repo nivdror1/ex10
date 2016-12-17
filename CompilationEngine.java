@@ -1,5 +1,9 @@
 import javax.print.Doc;
-import org.w3c.dom.Document;
+
+import com.sun.org.apache.xalan.internal.xsltc.dom.SimpleResultTreeImpl;
+import com.sun.org.apache.xalan.internal.xsltc.runtime.*;
+import org.w3c.dom.*;
+
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -17,26 +21,39 @@ public class CompilationEngine {
     private static final String EMPTY_LINE= "^\\s*+$";
     private static final Pattern EMPTY_LINE_PATTERN= Pattern.compile(EMPTY_LINE);
 
-    private static final String KEYWORD= "<keyword>";
+    private static final String KEYWORD= "keyword";
+    private static final String IDENTIFIER="identifier";
+    private static final String SYMBOL= "symbol";
 
-    /** the tokens input*/
-    private ArrayList<String> tokens;
+    private static final String CLASS= "class";
+    private static final String TOKENS="tokens";
+    private static final String CLASS_VAR_DEC= "classVarDec";
+    private static final String FIELD_OR_STATIC="field|static";
+    private static final String COMMA=",";
+
+
+    /** the tokens input xml*/
+    private Document tokenXml;
     /** a stack that entails the current block the compilation engine is processing.*/
-    private Stack<String> blocks; //todo find a better name
-    /** the current line being compiled*/
-    private String currentLine;
+    private Stack<String> blocks; //todo to think i don't really need it
+    /** the current element being compiled*/
+    private Element currentElement;
 
     /** the current matcher*/
     private Matcher curMatcher;
-
+    /** the output xml document*/
     private Document xmlDoc;
+    /** a node list made by the tokenizer*/
+    private NodeList tokenList;
+
+    private int counter=4;
 
     /** constructor*/
-    public CompilationEngine(ArrayList<String> tokens, Document xmlDoc){
-        this.tokens=tokens;
+    public CompilationEngine( Document tokenXml, Document xmlDoc){
+        this.tokenXml= tokenXml;
         this.blocks= new Stack<>();
-        this.currentLine=tokens.get(1); //skipping the token at the beginning of the input
         this.xmlDoc=xmlDoc;
+        this.tokenList= tokenXml.getElementsByTagName(TOKENS);
     }
 
     /**
@@ -48,32 +65,125 @@ public class CompilationEngine {
     }
 
 
-    /**
-     * advance the current line if possible
-     * @return the current line
-     */
-    private String advance(){
-        tokens.remove(0); // delete the current line
-        if(!tokens.isEmpty()){
-            this.currentLine=tokens.get(0); //advance
-        }
-        else{
-            this.currentLine=null; // in case the array list is empty
-        }
-        return this.currentLine;
-    }
+
 
     /**
      * initiate compilation by starting on compiling the class keyword
      */
     public void compileClass(){
-        xmlLines.add("<class>");
-        xmlLines.add(this.currentLine); //add the class keyword
-        advance();
-        xmlLines.add(this.currentLine); // add the identifier
-        advance();
-        xmlLines.add(this.currentLine); // add the curly brackets
+        Element rootElement =xmlDoc.createElement(CLASS); // add the root of the xml as class
+        // add the class keyword
+        addKeyword(rootElement);
+        // add the name of the class
+        addIdentifier(rootElement);
+        // add the symbol "{"
+        addSymbol(rootElement);
+
+        // compile the class variable declarations
+        compileClassVarDec(rootElement);
     }
+
+    private void compileClassVarDec(Element rootElement){
+        if(this.currentElement.getTextContent().matches(FIELD_OR_STATIC)) {
+            // add a field variable
+            Element classVarElement = xmlDoc.createElement(CLASS_VAR_DEC);
+
+
+            addKeyword(classVarElement); // add field or static
+            addKeyword(classVarElement); // add the type of the variable
+            addIdentifier(classVarElement); // add the name of the variable
+            checkForAnotherVariable(classVarElement);
+            addSymbol(classVarElement); // add the symbol ";"
+            // todo ask omri what to do when i append multiple children on account of the ending of the element
+            rootElement.appendChild(classVarElement);
+
+        }
+        else{
+            compileSubroutine();
+        }
+    }
+
+    /**
+     * advance the element
+     */
+    private void advanceElement(){ //todo decide what to do when the counter is bigger than tokenlist length
+        counter++;
+        if(counter<tokenList.getLength()) {
+            this.currentElement = (Element) tokenList.item(counter);
+        }
+    }
+
+    /**
+     * add a keyword element to the xml doc
+     * @param mainElement the father element
+     */
+    private void addKeyword(Element mainElement){
+        //set keywordElement
+        Element keywordElement =xmlDoc.createElement(KEYWORD);
+        Text keywordText= xmlDoc.createTextNode(this.currentElement.getTextContent());
+        keywordElement.appendChild(keywordText);
+
+        //connect to the father element
+        mainElement.appendChild(keywordElement);
+        advanceElement();
+    }
+
+    /**
+     * add an identifier to the xml doc
+     * @param mainElement the father element
+     */
+    private void addIdentifier(Element mainElement){
+        //set identifierElement
+        Element identifierElement =xmlDoc.createElement(IDENTIFIER);
+        Text name= xmlDoc.createTextNode(this.currentElement.getTextContent());
+        identifierElement.appendChild(name);
+
+        //connect to the father element
+        mainElement.appendChild(identifierElement);
+        advanceElement();
+    }
+
+    /**
+     * add a symbol to the xml doc
+     * @param  mainElement the father element
+     */
+    private void addSymbol(Element mainElement){
+        //set symbolElement
+        Element symbolElement= xmlDoc.createElement(SYMBOL);
+        Text symbolText= xmlDoc.createTextNode(this.currentElement.getTextContent());
+        symbolElement.appendChild(symbolText);
+
+        //connect to the father element
+        mainElement.appendChild(symbolElement);
+
+        advanceElement();
+    }
+
+    /**
+     * check for another variable separated by comma
+     */
+    private void checkForAnotherVariable(Element varDecElement){
+        while (this.currentElement.getTextContent().matches(COMMA)){
+            addSymbol(varDecElement); //add the comma
+            addIdentifier(varDecElement); //add a variable name
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
