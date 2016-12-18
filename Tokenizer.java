@@ -207,7 +207,7 @@ public class Tokenizer {
 			if(openMultilineComment){
 				if(line.contains("*/")){
 					openMultilineComment = false;
-					return preProcess(line.substring(line.indexOf("*/")));
+					return preProcess(line.substring(line.indexOf("*/") + 2));
 				} else {
 					return "";
 				}
