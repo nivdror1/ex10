@@ -3,6 +3,7 @@ import javax.print.Doc;
 import com.sun.org.apache.xalan.internal.xsltc.dom.SimpleResultTreeImpl;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.*;
 import org.w3c.dom.*;
+import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.Stack;
@@ -26,10 +27,16 @@ public class CompilationEngine {
     private static final String SYMBOL= "symbol";
 
     private static final String CLASS= "class";
-    private static final String TOKENS="tokens";
     private static final String CLASS_VAR_DEC= "classVarDec";
-    private static final String FIELD_OR_STATIC="field|static";
+    private static final String SUB_ROUTINE_DEC="subroutineDec";
+    private static final String PARAMETER_LIST= "parameterList";
+
+    private static final String FIELD_OR_STATIC="\\s++(field|static)\\s++";
+    private static final String FUNCTIONS_DEC="\\s++(method|function|constructor)\\s++";
+    private static final String FUNCTIONS_TYPE= "\\s++(void|int|char|boolean)\\s++";
+    private static final String PARAMETER_TYPE= "\\s++(int|char|boolean)\\s++";
     private static final String COMMA=",";
+    private static final String END_BRACKETS= "\\)";
 
 
     /** the tokens input xml*/
@@ -46,14 +53,16 @@ public class CompilationEngine {
     /** a node list made by the tokenizer*/
     private NodeList tokenList;
 
-    private int counter=4;
+    private int counter=1;
 
     /** constructor*/
     public CompilationEngine( Document tokenXml, Document xmlDoc){
         this.tokenXml= tokenXml;
         this.blocks= new Stack<>();
         this.xmlDoc=xmlDoc;
-        this.tokenList= tokenXml.getElementsByTagName(TOKENS);
+        Element rootElement= tokenXml.getDocumentElement();
+        this.tokenList=rootElement.getChildNodes();
+        this.currentElement= (Element)this.tokenList.item(1);
     }
 
     /**
@@ -72,6 +81,7 @@ public class CompilationEngine {
      */
     public void compileClass(){
         Element rootElement =xmlDoc.createElement(CLASS); // add the root of the xml as class
+        this.xmlDoc.appendChild(rootElement);
         // add the class keyword
         addKeyword(rootElement);
         // add the name of the class
@@ -83,31 +93,95 @@ public class CompilationEngine {
         compileClassVarDec(rootElement);
     }
 
+    /**
+     * compile field or static variable declarations
+     * @param rootElement the class element
+     */
     private void compileClassVarDec(Element rootElement){
-        if(this.currentElement.getTextContent().matches(FIELD_OR_STATIC)) {
-            // add a field variable
-            Element classVarElement = xmlDoc.createElement(CLASS_VAR_DEC);
 
+        while(this.currentElement.getTextContent().matches(FIELD_OR_STATIC)) {
 
-            addKeyword(classVarElement); // add field or static
+            // add a field or static variable
+            Element classVarElement= xmlDoc.createElement(CLASS_VAR_DEC);
+            rootElement.appendChild(classVarElement);
+
+            addKeyword(classVarElement); // add field or static keyword
             addKeyword(classVarElement); // add the type of the variable
             addIdentifier(classVarElement); // add the name of the variable
             checkForAnotherVariable(classVarElement);
             addSymbol(classVarElement); // add the symbol ";"
-            // todo ask omri what to do when i append multiple children on account of the ending of the element
-            rootElement.appendChild(classVarElement);
 
         }
-        else{
-            compileSubroutine();
+        compileSubroutine(rootElement);
+
+    }
+
+    /**
+     * compile subroutines such as constructor, method and function
+     * @param rootElement the class element
+     */
+    private void compileSubroutine(Element rootElement){
+
+        while(this.currentElement.getTextContent().matches(FUNCTIONS_DEC)) {
+            // add a kind of method
+            Element subRoutineDec= xmlDoc.createElement(SUB_ROUTINE_DEC);
+            rootElement.appendChild(subRoutineDec);
+
+            addKeyword(subRoutineDec); //add the type of the function
+
+            //add the return type of the function
+            if(this.currentElement.getTextContent().matches(FUNCTIONS_TYPE)){
+                addKeyword(subRoutineDec);
+            }else{
+                addIdentifier(subRoutineDec);
+            }
+            addIdentifier(subRoutineDec); //add the name of the function
+
+            addSymbol(subRoutineDec); //add the symbol "("
+            compileParameterList(subRoutineDec); //compile the function's parameters
+            addSymbol(subRoutineDec); //add the symbol ")"
+
+            compileSubroutineBody(subRoutineDec); //compile the body of the subroutine
         }
     }
 
     /**
+     * compile the function, method and constructor parameters
+     * @param subRoutineDec the root element
+     */
+    private void compileParameterList(Element subRoutineDec){
+        // add the parameters
+        Element parameterList= xmlDoc.createElement(PARAMETER_LIST);
+        subRoutineDec.appendChild(parameterList);
+        //check if there is parameters
+        while(!this.currentElement.getTextContent().matches(END_BRACKETS)){
+            //check for a comma if it exists add it
+            if(this.currentElement.getTextContent().matches(COMMA)){
+                addSymbol(parameterList);
+            }
+            //check if the parameter is an int , a char or a boolean
+            if(this.currentElement.getTextContent().matches(PARAMETER_TYPE)){
+                addKeyword(parameterList);
+            }
+            else{
+                addIdentifier(parameterList); // add a object base parameter type
+            }
+            addIdentifier(parameterList); //add the name of the parameter
+        }
+    }
+
+    /**
+     * compile the subroutine body
+     * @param subRoutineDec an element representing the subroutine declaration
+     */
+    private void compileSubroutineBody(Element subRoutineDec){
+
+    }
+    /**
      * advance the element
      */
     private void advanceElement(){ //todo decide what to do when the counter is bigger than tokenlist length
-        counter++;
+        counter+=2;
         if(counter<tokenList.getLength()) {
             this.currentElement = (Element) tokenList.item(counter);
         }
