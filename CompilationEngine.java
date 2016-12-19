@@ -29,13 +29,31 @@ public class CompilationEngine {
     private static final String CLASS= "class";
     private static final String CLASS_VAR_DEC= "classVarDec";
     private static final String SUB_ROUTINE_DEC="subroutineDec";
+    private static final String SUB_ROUTINE_BODY="subroutineBody";
     private static final String PARAMETER_LIST= "parameterList";
+    private static final String VAR_DEC= "varDec";
+    private static final String STATEMENT = "statement";
+    private static final String LET_STATEMENT= "letStatement";
+    private static final String WHILE_STATEMENT= "whileStatement";
+    private static final String IF_STATEMENT= "ifStatement";
+    private static final String DO_STATEMENT= "doStatement";
+    private static final String RETURN_STATEMENT= "returnStatement";
+    private static final String EXPRESSION= "expression";
+    private static final String TERM ="term";
 
     private static final String FIELD_OR_STATIC="\\s++(field|static)\\s++";
     private static final String FUNCTIONS_DEC="\\s++(method|function|constructor)\\s++";
     private static final String FUNCTIONS_TYPE= "\\s++(void|int|char|boolean)\\s++";
-    private static final String PARAMETER_TYPE= "\\s++(int|char|boolean)\\s++";
+    private static final String TYPE= "\\s++(int|char|boolean)\\s++";
+    private static final String STATEMENT_TYPE= "\\s++(let|while|if|do|return)\\s++";
+    private static final String VAR= "\\s++var\\s++";
+    private static final String LET ="\\s++let\\s++";
+    private static final String WHILE = "\\s++while\\s++";
+    private static final String IF = "\\s++if\\s++";
+    private static final String DO = "\\s++do\\s++";
+    private static final String RETURN = "\\s++return\\s++";
     private static final String COMMA=",";
+    private static final String OPEN_SQUARE_BRACKET="\\[";
     private static final String END_BRACKETS= "\\)";
 
 
@@ -160,12 +178,7 @@ public class CompilationEngine {
                 addSymbol(parameterList);
             }
             //check if the parameter is an int , a char or a boolean
-            if(this.currentElement.getTextContent().matches(PARAMETER_TYPE)){
-                addKeyword(parameterList);
-            }
-            else{
-                addIdentifier(parameterList); // add a object base parameter type
-            }
+            checkAVarType(parameterList);
             addIdentifier(parameterList); //add the name of the parameter
         }
     }
@@ -175,7 +188,130 @@ public class CompilationEngine {
      * @param subRoutineDec an element representing the subroutine declaration
      */
     private void compileSubroutineBody(Element subRoutineDec){
+        //add a subroutine body element
+        Element subroutineBody= xmlDoc.createElement(SUB_ROUTINE_BODY);
+        subRoutineDec.appendChild(subroutineBody);
 
+        addSymbol(subroutineBody); //add the symbol "{"
+        while(this.currentElement.getTextContent().matches(VAR)){
+            compileVarDec(subroutineBody);
+        }
+        compileStatement(subroutineBody);
+    }
+
+    /**
+     * compile local variable declarations
+     * @param subroutineBody the subroutine body element
+     */
+    private void compileVarDec(Element subroutineBody){
+        //add a local variable declaration
+        Element varDec= xmlDoc.createElement(VAR_DEC);
+        subroutineBody.appendChild(varDec);
+
+        addKeyword(varDec);// add the var keyword
+        //check if the parameter is an int , a char or a boolean or an object based class
+        checkAVarType(varDec);
+        addIdentifier(varDec); //add the name of the variable
+
+        // check if another variable are declared of the same type
+        checkForAnotherVariable(varDec);
+        addSymbol(varDec); //add the symbol ";"
+    }
+
+    /**
+     * compile the statement such as while, do, if,else and let
+     * @param subroutineBody the subroutine body element
+     */
+    private void compileStatement(Element subroutineBody){
+
+        //add a statement element
+        Element statement = xmlDoc.createElement(STATEMENT);
+        subroutineBody.appendChild(statement);
+        // check if there is another statement
+        while (this.currentElement.getTextContent().matches(STATEMENT_TYPE)) {
+            //check for each statement
+            if(this.currentElement.getTextContent().matches(LET)) {
+                compileLet(statement);
+            } else if (this.currentElement.getTextContent().matches(WHILE)){
+                compileWhile(statement);
+            }else if (this.currentElement.getTextContent().matches(IF)){
+                compileIf(statement);
+            }else if (this.currentElement.getTextContent().matches(DO)){
+                compileDo(statement);
+            }else if (this.currentElement.getTextContent().matches(RETURN)){
+                compileReturn(statement);
+            }
+        }
+    }
+
+    /**
+     * compile a let statement
+     * @param statement the statement element
+     */
+    private void compileLet(Element statement){
+        // begin a let statement
+        Element let= xmlDoc.createElement(LET_STATEMENT);
+        statement.appendChild(let);
+
+        addKeyword(let); //add the let keyword
+        addIdentifier(let); //add the name of the variable
+
+        if(this.currentElement.getTextContent().matches(OPEN_SQUARE_BRACKET)){
+            addSymbol(let); //add the symbol "["
+            compileExpression(let);
+            addSymbol(let); //add the symbol "]"
+        }
+        //todo maybe add calling for a method
+        addSymbol(let); // add the symbol "="
+        compileExpression(let);
+        addSymbol(let); //add the symbol ";"
+
+    }
+
+    /**
+     * compile a while statement
+     * @param statement the statement element
+     */
+    private void compileWhile(Element statement){
+        // begin a while statement
+        Element whileStatement= xmlDoc.createElement(WHILE_STATEMENT);
+        statement.appendChild(whileStatement);
+
+        addKeyword(whileStatement); //add the while keyword
+        addSymbol(whileStatement); //add the symbol "("
+        //compile the while condition
+        compileExpression(whileStatement);
+
+        addSymbol(whileStatement); //add the symbol ")"
+        addSymbol(whileStatement); //add the symbol "{"
+
+        //compile the statement inside the while
+        compileStatement(whileStatement);
+    }
+
+    
+    /**
+     * compile a expression
+     * @param rootElement the root element
+     */
+    private void compileExpression(Element rootElement){
+        // add a expression element
+        Element expression= xmlDoc.createElement(EXPRESSION);
+        rootElement.appendChild(expression);
+
+        compileTerm(expression);
+    }
+
+    /**
+     * compile a term
+     * @param rootElement the root element
+     */
+    private void compileTerm(Element rootElement){
+        // add a term element
+        Element term= xmlDoc.createElement(TERM);
+        rootElement.appendChild(term);
+
+        addIdentifier(term);
     }
     /**
      * advance the element
@@ -243,6 +379,18 @@ public class CompilationEngine {
         }
     }
 
+    /**
+     * check if the type of the variable is int,char or boolean else it's an object base class
+     * @param rootElement the root element
+     */
+    private void checkAVarType(Element rootElement){
+        if(this.currentElement.getTextContent().matches(TYPE)){
+            addKeyword(rootElement);
+        }
+        else{
+            addIdentifier(rootElement); // add a object base parameter type
+        }
+    }
 
 
 
