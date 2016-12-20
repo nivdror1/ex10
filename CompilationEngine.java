@@ -14,14 +14,6 @@ import java.util.regex.Pattern;
 public class CompilationEngine {
 
 
-    /** a regex for a comment*/
-    private static final String ONE_LINER_COMMENT ="^/{2}";
-    private static final Pattern COMMENT_PATTERN= Pattern.compile(ONE_LINER_COMMENT);
-
-    /** a regex for an empty line*/
-    private static final String EMPTY_LINE= "^\\s*+$";
-    private static final Pattern EMPTY_LINE_PATTERN= Pattern.compile(EMPTY_LINE);
-
     private static final String KEYWORD= "keyword";
     private static final String IDENTIFIER="identifier";
     private static final String SYMBOL= "symbol";
@@ -40,6 +32,7 @@ public class CompilationEngine {
     private static final String RETURN_STATEMENT= "returnStatement";
     private static final String EXPRESSION= "expression";
     private static final String TERM ="term";
+    private static final String EXPRESSION_LIST= "expressionList";
 
     private static final String FIELD_OR_STATIC="\\s++(field|static)\\s++";
     private static final String FUNCTIONS_DEC="\\s++(method|function|constructor)\\s++";
@@ -52,9 +45,12 @@ public class CompilationEngine {
     private static final String IF = "\\s++if\\s++";
     private static final String DO = "\\s++do\\s++";
     private static final String RETURN = "\\s++return\\s++";
+    private static final String ELSE = "\\s++else\\s++";
     private static final String COMMA=",";
     private static final String OPEN_SQUARE_BRACKET="\\[";
     private static final String END_BRACKETS= "\\)";
+    private static final String DOT="\\.";
+    private static final String SEMI_COLON=";";
 
 
     /** the tokens input xml*/
@@ -220,13 +216,13 @@ public class CompilationEngine {
 
     /**
      * compile the statement such as while, do, if,else and let
-     * @param subroutineBody the subroutine body element
+     * @param rootElement the root element
      */
-    private void compileStatement(Element subroutineBody){
+    private void compileStatement(Element rootElement){
 
         //add a statement element
         Element statement = xmlDoc.createElement(STATEMENT);
-        subroutineBody.appendChild(statement);
+        rootElement.appendChild(statement);
         // check if there is another statement
         while (this.currentElement.getTextContent().matches(STATEMENT_TYPE)) {
             //check for each statement
@@ -278,18 +274,100 @@ public class CompilationEngine {
         statement.appendChild(whileStatement);
 
         addKeyword(whileStatement); //add the while keyword
-        addSymbol(whileStatement); //add the symbol "("
-        //compile the while condition
-        compileExpression(whileStatement);
 
-        addSymbol(whileStatement); //add the symbol ")"
-        addSymbol(whileStatement); //add the symbol "{"
+        //compile the while condition
+        compileProgramFlowCondition(whileStatement);
 
         //compile the statement inside the while
-        compileStatement(whileStatement);
+        compileProgramFlowStatement(whileStatement);
     }
 
-    
+    /**
+     * compile a if statement
+     * @param statement the statement element
+     */
+    private void compileIf(Element statement){
+        // begin a if statement
+        Element ifStatement= xmlDoc.createElement(IF_STATEMENT);
+        statement.appendChild(ifStatement);
+
+        //compile the if condition
+        addKeyword(ifStatement); // add the if keyword
+        compileProgramFlowCondition(ifStatement);
+
+        //compile the if statement
+        compileProgramFlowStatement(ifStatement);
+
+        //compile the else statement if it exists
+        if(this.currentElement.getTextContent().matches(ELSE)){
+            addKeyword(ifStatement); //add the else keyword
+            compileProgramFlowStatement(ifStatement);
+        }
+    }
+
+    /**
+     * compile a do statement
+     * @param statement the statement element
+     */
+    private void compileDo(Element statement){
+        // begin a do statement
+        Element doStatement= xmlDoc.createElement(DO_STATEMENT);
+        statement.appendChild(doStatement);
+
+        addKeyword(doStatement); // add the do keyword
+        addIdentifier(doStatement); //add the name of the class or the name of the subroutine
+
+        //in case the call wasn't made of the class
+        if(this.currentElement.getTextContent().matches(DOT)){
+            addSymbol(doStatement); //add the symbol "."
+            addIdentifier(doStatement); //add the name of the subroutine
+        }
+
+        // compile the parameter list
+        addSymbol(doStatement); //add the symbol "("
+        compileExpressionList(doStatement);
+        addSymbol(doStatement); //add the symbol ")"
+
+        addSymbol(doStatement); // add the symbol ";"
+    }
+
+    /**
+     * compile a return statement
+     * @param statement the statement element
+     */
+    private void compileReturn(Element statement){
+        // begin a return statement
+        Element returnStatement= xmlDoc.createElement(RETURN_STATEMENT);
+        statement.appendChild(returnStatement);
+
+        addKeyword(returnStatement); //add the return keyword
+        if(!this.currentElement.getTextContent().matches(SEMI_COLON)){
+            compileExpression(returnStatement);
+        }
+        addSymbol(returnStatement); //add the symbol ";"
+    }
+    /**
+     * compile an expression list
+     * @param rootElement the root element
+     */
+    private void compileExpressionList(Element rootElement){
+        // begin an expressionList
+        Element expressionList= xmlDoc.createElement(EXPRESSION_LIST);
+        rootElement.appendChild(expressionList);
+
+        //check for a expression
+        if(!this.currentElement.getTextContent().matches(END_BRACKETS)){
+            //compile the first expression
+            compileExpression(expressionList);
+
+            //check for other expressions
+            while(this.currentElement.getTextContent().matches(COMMA)){
+                addSymbol(expressionList); //add the symbol ","
+                compileExpression(expressionList);
+            }
+        }
+
+    }
     /**
      * compile a expression
      * @param rootElement the root element
@@ -392,43 +470,25 @@ public class CompilationEngine {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
-     * check if the line is blank
-     * @param line a string that represent the specific line in the asm file
-     * @return return true if it was a blank line, false otherwise
+     * compile the statement inside the while, if or else blocks
+     * @param rootElement the root element
      */
-    private boolean deleteBlankLines(String line){
-        Matcher m=EMPTY_LINE_PATTERN.matcher(line);
-        return m.find(); // check for an empty line
+    private void compileProgramFlowStatement(Element rootElement){
 
+        addSymbol(rootElement); //add the symbol "{"
+        compileStatement(rootElement);
+        addSymbol(rootElement); //add the symbol "}"
     }
 
     /**
-     * check if the line is a comment
-     * @param line a string that represent the specific line in the asm file
-     * @return return true if it was a comment, false otherwise
+     * compile the if or while conditions
+     * @param rootElement the root element
      */
-    private boolean deleteOneLinerComment(String line)
-    {
-        Matcher m= COMMENT_PATTERN.matcher(line);
-        return m.lookingAt();
+    private void compileProgramFlowCondition(Element rootElement){
+        addSymbol(rootElement); // add the symbol "("
+        compileExpression(rootElement);
+        addSymbol(rootElement); //add the symbol ")"
     }
 
 }
