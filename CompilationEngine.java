@@ -46,11 +46,11 @@ public class CompilationEngine {
     private static final String DO = "\\s++do\\s++";
     private static final String RETURN = "\\s++return\\s++";
     private static final String ELSE = "\\s++else\\s++";
-    private static final String COMMA=",";
-    private static final String OPEN_SQUARE_BRACKET="\\[";
-    private static final String END_BRACKETS= "\\)";
-    private static final String DOT="\\.";
-    private static final String SEMI_COLON=";";
+    private static final String COMMA="\\s*+,\\s*+";
+    private static final String OPEN_SQUARE_BRACKET="\\s*+\\[\\s*+";
+    private static final String END_BRACKETS= "\\s*+\\)\\s*+";
+    private static final String DOT="\\s*+\\.\\s*+";
+    private static final String SEMI_COLON="\\s*+;\\s*+";
 
 
     /** the tokens input xml*/
@@ -96,6 +96,7 @@ public class CompilationEngine {
     public void compileClass(){
         Element rootElement =xmlDoc.createElement(CLASS); // add the root of the xml as class
         this.xmlDoc.appendChild(rootElement);
+
         // add the class keyword
         addKeyword(rootElement);
         // add the name of the class
@@ -105,6 +106,8 @@ public class CompilationEngine {
 
         // compile the class variable declarations
         compileClassVarDec(rootElement);
+
+        addSymbol(rootElement); //add the symbol "}"
     }
 
     /**
@@ -137,6 +140,7 @@ public class CompilationEngine {
     private void compileSubroutine(Element rootElement){
 
         while(this.currentElement.getTextContent().matches(FUNCTIONS_DEC)) {
+
             // add a kind of method
             Element subRoutineDec= xmlDoc.createElement(SUB_ROUTINE_DEC);
             rootElement.appendChild(subRoutineDec);
@@ -149,6 +153,7 @@ public class CompilationEngine {
             }else{
                 addIdentifier(subRoutineDec);
             }
+
             addIdentifier(subRoutineDec); //add the name of the function
 
             addSymbol(subRoutineDec); //add the symbol "("
@@ -167,7 +172,9 @@ public class CompilationEngine {
         // add the parameters
         Element parameterList= xmlDoc.createElement(PARAMETER_LIST);
         subRoutineDec.appendChild(parameterList);
+
         //check if there is parameters
+
         while(!this.currentElement.getTextContent().matches(END_BRACKETS)){
             //check for a comma if it exists add it
             if(this.currentElement.getTextContent().matches(COMMA)){
@@ -177,6 +184,7 @@ public class CompilationEngine {
             checkAVarType(parameterList);
             addIdentifier(parameterList); //add the name of the parameter
         }
+
     }
 
     /**
@@ -193,6 +201,7 @@ public class CompilationEngine {
             compileVarDec(subroutineBody);
         }
         compileStatement(subroutineBody);
+        addSymbol(subroutineBody); //add the symbol "}"
     }
 
     /**
@@ -225,6 +234,7 @@ public class CompilationEngine {
         rootElement.appendChild(statement);
         // check if there is another statement
         while (this.currentElement.getTextContent().matches(STATEMENT_TYPE)) {
+
             //check for each statement
             if(this.currentElement.getTextContent().matches(LET)) {
                 compileLet(statement);
@@ -315,6 +325,7 @@ public class CompilationEngine {
         statement.appendChild(doStatement);
 
         addKeyword(doStatement); // add the do keyword
+
         addIdentifier(doStatement); //add the name of the class or the name of the subroutine
 
         //in case the call wasn't made of the class
@@ -390,6 +401,10 @@ public class CompilationEngine {
         rootElement.appendChild(term);
 
         addIdentifier(term);
+        if(this.currentElement.getTextContent().matches("\\s*+\\|\\s*+")){ //todo make more generic
+            addSymbol(term);
+            addIdentifier(term);
+        }
     }
     /**
      * advance the element
