@@ -51,7 +51,7 @@ public class CompilationEngine {
     private static final String END_BRACKETS= "\\s*+\\)\\s*+";
     private static final String DOT="\\s*+\\.\\s*+";
     private static final String SEMI_COLON="\\s*+;\\s*+";
-
+    private static final String THIS="\\s*+this\\s*+";
 
     /** the tokens input xml*/
     private Document tokenXml;
@@ -120,7 +120,11 @@ public class CompilationEngine {
             rootElement.appendChild(classVarElement);
 
             addKeyword(classVarElement); // add field or static keyword
-            addKeyword(classVarElement); // add the type of the variable
+            if(this.currentElement.getTextContent().matches(TYPE)) {
+                addKeyword(classVarElement); // add the type of the variable
+            }else{
+                addIdentifier(classVarElement); //add the object base type of the variable
+            }
             addIdentifier(classVarElement); // add the name of the variable
             checkForAnotherVariable(classVarElement);
             addSymbol(classVarElement); // add the symbol ";"
@@ -412,13 +416,18 @@ public class CompilationEngine {
         Element term= xmlDoc.createElement(TERM);
         rootElement.appendChild(term);
 
-        addIdentifier(term);
+        if(this.currentElement.getTextContent().matches(THIS)){ //to generalize
+            addKeyword(term); //add the keyword this
+        }else{
+            addIdentifier(term);
+        }
+
 
     }
     /**
      * advance the element
      */
-    private void advanceElement(){ //todo decide what to do when the counter is bigger than tokenlist length
+    private void advanceElement(){
         counter+=2;
         if(counter<tokenList.getLength()) {
             this.currentElement = (Element) tokenList.item(counter);
