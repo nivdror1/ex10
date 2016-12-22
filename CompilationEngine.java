@@ -33,6 +33,8 @@ public class CompilationEngine {
     private static final String EXPRESSION= "expression";
     private static final String TERM ="term";
     private static final String EXPRESSION_LIST= "expressionList";
+    private static final String INTEGER_CONSTANT ="integerConstant";
+    private static final String STRING_CONSTANT= "stringConstant";
 
     private static final String FIELD_OR_STATIC="\\s*+(field|static)\\s*+";
     private static final String FUNCTIONS_DEC="\\s*+(method|function|constructor)\\s*+";
@@ -51,7 +53,10 @@ public class CompilationEngine {
     private static final String END_BRACKETS= "\\s*+\\)\\s*+";
     private static final String DOT="\\s*+\\.\\s*+";
     private static final String SEMI_COLON="\\s*+;\\s*+";
-    private static final String THIS="\\s*+this\\s*+";
+    private static final String KEYWORD_CONSTANT="\\s*+(this|true|false|null)\\s*+";
+    private static final String OPERATORS= "\\s*+(\\||\\+|-|\\*|/|&amp|&lt|&gt|=|)\\s*+";
+    private static final String STR_CONSTANT= "\\s*+\"[a-zA-Z]\\w*+()*+(\\w*+( )*+(\\?|!|:|\\.|,)?)*+\"( )*+";
+    private static final String DECIMAL_CONSTANT= "\\s*+[0-9]++\\s*+";
 
     /** the tokens input xml*/
     private Document tokenXml;
@@ -399,8 +404,8 @@ public class CompilationEngine {
         rootElement.appendChild(expression);
 
         compileTerm(expression);
-
-        while(this.currentElement.getTextContent().matches("\\s*+\\|\\s*+")){ //todo make more generic
+        // check for operators if so compile another term
+        while(this.currentElement.getTextContent().matches(OPERATORS)){
            addSymbol(expression);
            compileTerm(expression);
        }
@@ -416,9 +421,14 @@ public class CompilationEngine {
         Element term= xmlDoc.createElement(TERM);
         rootElement.appendChild(term);
 
-        if(this.currentElement.getTextContent().matches(THIS)){ //to generalize
+        if(this.currentElement.getTextContent().matches(KEYWORD_CONSTANT)){
             addKeyword(term); //add the keyword this
-        }else{
+        }else if(this.currentElement.getTextContent().matches(DECIMAL_CONSTANT)){
+            addIntegerConstant(term); // add the integer constant
+        }else if(this.currentElement.getTextContent().matches(STR_CONSTANT)){
+            addStringConstant(term); //add the string constant
+        }
+        else{
             addIdentifier(term);
         }
 
@@ -476,6 +486,38 @@ public class CompilationEngine {
 
         //connect to the father element
         mainElement.appendChild(symbolElement);
+
+        advanceElement();
+    }
+
+    /**
+     * add a integer constant to the xml doc
+     * @param  mainElement the father element
+     */
+    private void addIntegerConstant(Element mainElement){
+        //set symbolElement
+        Element integerElement= xmlDoc.createElement(INTEGER_CONSTANT);
+        Text integerText= xmlDoc.createTextNode(this.currentElement.getTextContent());
+        integerElement.appendChild(integerText);
+
+        //connect to the father element
+        mainElement.appendChild(integerElement);
+
+        advanceElement();
+    }
+
+    /**
+     * add a string constant to the xml doc
+     * @param  mainElement the father element
+     */
+    private void addStringConstant(Element mainElement){
+        //set symbolElement
+        Element stringElement= xmlDoc.createElement(STRING_CONSTANT);
+        Text stringText= xmlDoc.createTextNode(this.currentElement.getTextContent());
+        stringElement.appendChild(stringText);
+
+        //connect to the father element
+        mainElement.appendChild(stringElement);
 
         advanceElement();
     }
