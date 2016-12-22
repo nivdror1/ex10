@@ -2,12 +2,18 @@ import com.sun.org.apache.xml.internal.serialize.OutputFormat;
 import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationsException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.print.Doc;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -175,20 +181,29 @@ public class IO {
      * @param xmlDoc the document to serialize
      */
     private static void writeXml(String outputFileName, Document xmlDoc){
-        //set output format
-        OutputFormat outFormat= new OutputFormat(xmlDoc);
-        outFormat.setIndenting(true);
 
-        File outputFile= new File(outputFileName);
-        try (FileOutputStream outStream = new FileOutputStream(outputFile)){
-            //create a xml serializer
-            XMLSerializer serializer= new XMLSerializer(outStream,outFormat);
-            // serialize the xml file
-            serializer.serialize(xmlDoc);
-        }
-        catch (IOException e){
+        try{
+
+            // write the content into xml file
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+
+            //set the output format
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+            transformer.setOutputProperty(OutputKeys.METHOD, "html");
+
+            DOMSource source = new DOMSource(xmlDoc);
+
+            // Output to console
+            StreamResult consoleResult = new StreamResult(new File(outputFileName));
+            transformer.transform(source, consoleResult);
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
 
     /**

@@ -24,7 +24,7 @@ public class CompilationEngine {
     private static final String SUB_ROUTINE_BODY="subroutineBody";
     private static final String PARAMETER_LIST= "parameterList";
     private static final String VAR_DEC= "varDec";
-    private static final String STATEMENT = "statement";
+    private static final String STATEMENT = "statements";
     private static final String LET_STATEMENT= "letStatement";
     private static final String WHILE_STATEMENT= "whileStatement";
     private static final String IF_STATEMENT= "ifStatement";
@@ -34,18 +34,18 @@ public class CompilationEngine {
     private static final String TERM ="term";
     private static final String EXPRESSION_LIST= "expressionList";
 
-    private static final String FIELD_OR_STATIC="\\s++(field|static)\\s++";
-    private static final String FUNCTIONS_DEC="\\s++(method|function|constructor)\\s++";
-    private static final String FUNCTIONS_TYPE= "\\s++(void|int|char|boolean)\\s++";
-    private static final String TYPE= "\\s++(int|char|boolean)\\s++";
-    private static final String STATEMENT_TYPE= "\\s++(let|while|if|do|return)\\s++";
-    private static final String VAR= "\\s++var\\s++";
-    private static final String LET ="\\s++let\\s++";
-    private static final String WHILE = "\\s++while\\s++";
-    private static final String IF = "\\s++if\\s++";
-    private static final String DO = "\\s++do\\s++";
-    private static final String RETURN = "\\s++return\\s++";
-    private static final String ELSE = "\\s++else\\s++";
+    private static final String FIELD_OR_STATIC="\\s*+(field|static)\\s*+";
+    private static final String FUNCTIONS_DEC="\\s*+(method|function|constructor)\\s*+";
+    private static final String FUNCTIONS_TYPE= "\\s*+(void|int|char|boolean)\\s*+";
+    private static final String TYPE= "\\s*+(int|char|boolean)\\s*+";
+    private static final String STATEMENT_TYPE= "\\s*+(let|while|if|do|return)\\s*+";
+    private static final String VAR= "\\s*+var\\s*+";
+    private static final String LET ="\\s*+let\\s*+";
+    private static final String WHILE = "\\s*+while\\s*+";
+    private static final String IF = "\\s*+if\\s*+";
+    private static final String DO = "\\s*+do\\s*+";
+    private static final String RETURN = "\\s*+return\\s*+";
+    private static final String ELSE = "\\s*+else\\s*+";
     private static final String COMMA="\\s*+,\\s*+";
     private static final String OPEN_SQUARE_BRACKET="\\s*+\\[\\s*+";
     private static final String END_BRACKETS= "\\s*+\\)\\s*+";
@@ -70,6 +70,7 @@ public class CompilationEngine {
     public CompilationEngine( Document tokenXml, Document xmlDoc){
         this.tokenXml= tokenXml;
         this.xmlDoc=xmlDoc;
+        xmlDoc.setXmlStandalone(true);
         Element rootElement= tokenXml.getDocumentElement();
         this.tokenList=rootElement.getChildNodes();
         this.currentElement= (Element)this.tokenList.item(1);
@@ -179,6 +180,10 @@ public class CompilationEngine {
             //check if the parameter is an int , a char or a boolean
             checkAVarType(parameterList);
             addIdentifier(parameterList); //add the name of the parameter
+        }
+        if(!parameterList.hasChildNodes()){
+            Text empty= xmlDoc.createTextNode("\t");
+            parameterList.appendChild(empty);
         }
 
     }
@@ -373,6 +378,11 @@ public class CompilationEngine {
                 compileExpression(expressionList);
             }
         }
+        if(!expressionList.hasChildNodes()){
+            Text empty= xmlDoc.createTextNode("\t");
+            expressionList.appendChild(empty);
+        }
+
 
     }
     /**
@@ -385,6 +395,12 @@ public class CompilationEngine {
         rootElement.appendChild(expression);
 
         compileTerm(expression);
+
+        while(this.currentElement.getTextContent().matches("\\s*+\\|\\s*+")){ //todo make more generic
+           addSymbol(expression);
+           compileTerm(expression);
+       }
+
     }
 
     /**
@@ -397,10 +413,7 @@ public class CompilationEngine {
         rootElement.appendChild(term);
 
         addIdentifier(term);
-        if(this.currentElement.getTextContent().matches("\\s*+\\|\\s*+")){ //todo make more generic
-            addSymbol(term);
-            addIdentifier(term);
-        }
+
     }
     /**
      * advance the element
