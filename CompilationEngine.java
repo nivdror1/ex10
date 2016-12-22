@@ -55,13 +55,10 @@ public class CompilationEngine {
 
     /** the tokens input xml*/
     private Document tokenXml;
-    /** a stack that entails the current block the compilation engine is processing.*/
-    private Stack<String> blocks; //todo to think i don't really need it
+
     /** the current element being compiled*/
     private Element currentElement;
 
-    /** the current matcher*/
-    private Matcher curMatcher;
     /** the output xml document*/
     private Document xmlDoc;
     /** a node list made by the tokenizer*/
@@ -72,7 +69,6 @@ public class CompilationEngine {
     /** constructor*/
     public CompilationEngine( Document tokenXml, Document xmlDoc){
         this.tokenXml= tokenXml;
-        this.blocks= new Stack<>();
         this.xmlDoc=xmlDoc;
         Element rootElement= tokenXml.getDocumentElement();
         this.tokenList=rootElement.getChildNodes();
