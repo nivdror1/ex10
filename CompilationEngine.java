@@ -50,11 +50,13 @@ public class CompilationEngine {
     private static final String ELSE = "\\s*+else\\s*+";
     private static final String COMMA="\\s*+,\\s*+";
     private static final String OPEN_SQUARE_BRACKET="\\s*+\\[\\s*+";
+    private static final String OPEN_BRACKETS= "\\s*+\\(\\s*+";
     private static final String END_BRACKETS= "\\s*+\\)\\s*+";
     private static final String DOT="\\s*+\\.\\s*+";
     private static final String SEMI_COLON="\\s*+;\\s*+";
     private static final String KEYWORD_CONSTANT="\\s*+(this|true|false|null)\\s*+";
     private static final String OPERATORS= "\\s*+(\\||\\+|-|\\*|/|&amp|&lt|&gt|=|)\\s*+";
+    private static final String UNARY_OP= "\\s*+(~|-)\\s*+";
     private static final String STR_CONSTANT= "\\s*+\"[a-zA-Z]\\w*+()*+(\\w*+( )*+(\\?|!|:|\\.|,)?)*+\"( )*+";
     private static final String DECIMAL_CONSTANT= "\\s*+[0-9]++\\s*+";
 
@@ -429,7 +431,30 @@ public class CompilationEngine {
             addStringConstant(term); //add the string constant
         }
         else{
+            if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
+                addSymbol(term); //add the symbol "("
+                compileExpression(term);
+                addSymbol(term); //add the symbol ")"
+            }
             addIdentifier(term);
+            if(this.currentElement.getTextContent().matches(OPEN_SQUARE_BRACKET)){
+                addSymbol(term); //add the symbol "["
+                compileExpression(term);
+                addSymbol(term); //add the symbol "]"
+            }else if(this.currentElement.getTextContent().matches(DOT)){
+                addSymbol(term); //add the symbol "."
+                addIdentifier(term); //add the name of the method
+                addSymbol(term); //add the symbol "("
+                compileExpressionList(term);
+                addSymbol(term); //add the symbol ")"
+            }else if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
+                addSymbol(term); //add the symbol "("
+                compileExpressionList(term);
+                addSymbol(term); //add the symbol ")"
+            }else if (this.currentElement.getTextContent().matches(UNARY_OP)){
+                addSymbol(term); //add the symbol "~,-"
+                compileTerm(term);
+            }
         }
 
 
