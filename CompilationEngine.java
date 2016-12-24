@@ -451,7 +451,7 @@ public class CompilationEngine {
                 addSymbol(term); //add the symbol "("
                 compileExpressionList(term);
                 addSymbol(term); //add the symbol ")"
-            }else if (this.currentElement.getTextContent().matches(UNARY_OP)){
+            }else if (this.currentElement.getTextContent().matches(UNARY_OP)){ //compile unary operation
                 addSymbol(term); //add the symbol "~,-"
                 compileTerm(term);
             }
