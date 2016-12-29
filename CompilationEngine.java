@@ -1,5 +1,6 @@
 import javax.print.Doc;
 
+import com.sun.org.apache.bcel.internal.generic.SASTORE;
 import com.sun.org.apache.xalan.internal.xsltc.dom.SimpleResultTreeImpl;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.*;
 import org.w3c.dom.*;
@@ -102,16 +103,17 @@ public class CompilationEngine {
         this.xmlDoc.appendChild(rootElement);
 
         // add the class keyword
-        addKeyword(rootElement);
+        addElement(rootElement,KEYWORD);
+
         // add the name of the class
-        addIdentifier(rootElement);
+        addElement(rootElement,IDENTIFIER);
         // add the symbol "{"
-        addSymbol(rootElement);
+        addElement(rootElement,SYMBOL);
 
         // compile the class variable declarations
         compileClassVarDec(rootElement);
 
-        addSymbol(rootElement); //add the symbol "}"
+        addElement(rootElement,SYMBOL); //add the symbol "}"
     }
 
     /**
@@ -126,15 +128,15 @@ public class CompilationEngine {
             Element classVarElement= xmlDoc.createElement(CLASS_VAR_DEC);
             rootElement.appendChild(classVarElement);
 
-            addKeyword(classVarElement); // add field or static keyword
+            addElement(classVarElement,KEYWORD); // add field or static keyword
             if(this.currentElement.getTextContent().matches(TYPE)) {
-                addKeyword(classVarElement); // add the type of the variable
+                addElement(classVarElement,KEYWORD); // add the type of the variable
             }else{
-                addIdentifier(classVarElement); //add the object base type of the variable
+                addElement(classVarElement,IDENTIFIER); //add the object base type of the variable
             }
-            addIdentifier(classVarElement); // add the name of the variable
+            addElement(classVarElement,IDENTIFIER); // add the name of the variable
             checkForAnotherVariable(classVarElement);
-            addSymbol(classVarElement); // add the symbol ";"
+            addElement(classVarElement,SYMBOL); // add the symbol ";"
 
         }
         compileSubroutine(rootElement);
@@ -153,20 +155,20 @@ public class CompilationEngine {
             Element subRoutineDec= xmlDoc.createElement(SUB_ROUTINE_DEC);
             rootElement.appendChild(subRoutineDec);
 
-            addKeyword(subRoutineDec); //add the type of the function
+            addElement(subRoutineDec,KEYWORD); //add the type of the function
 
             //add the return type of the function
             if(this.currentElement.getTextContent().matches(FUNCTIONS_TYPE)){
-                addKeyword(subRoutineDec);
+                addElement(subRoutineDec,KEYWORD);
             }else{
-                addIdentifier(subRoutineDec);
+                addElement(subRoutineDec,IDENTIFIER);
             }
 
-            addIdentifier(subRoutineDec); //add the name of the function
+            addElement(subRoutineDec,IDENTIFIER); //add the name of the function
 
-            addSymbol(subRoutineDec); //add the symbol "("
+            addElement(subRoutineDec,SYMBOL); //add the symbol "("
             compileParameterList(subRoutineDec); //compile the function's parameters
-            addSymbol(subRoutineDec); //add the symbol ")"
+            addElement(subRoutineDec,SYMBOL); //add the symbol ")"
 
             compileSubroutineBody(subRoutineDec); //compile the body of the subroutine
         }
@@ -186,11 +188,11 @@ public class CompilationEngine {
         while(!this.currentElement.getTextContent().matches(END_BRACKETS)){
             //check for a comma if it exists add it
             if(this.currentElement.getTextContent().matches(COMMA)){
-                addSymbol(parameterList);
+                addElement(parameterList,SYMBOL);
             }
             //check if the parameter is an int , a char or a boolean
             checkAVarType(parameterList);
-            addIdentifier(parameterList); //add the name of the parameter
+            addElement(parameterList,IDENTIFIER); //add the name of the parameter
         }
         if(!parameterList.hasChildNodes()){
             Text empty= xmlDoc.createTextNode("\t");
@@ -208,12 +210,12 @@ public class CompilationEngine {
         Element subroutineBody= xmlDoc.createElement(SUB_ROUTINE_BODY);
         subRoutineDec.appendChild(subroutineBody);
 
-        addSymbol(subroutineBody); //add the symbol "{"
+        addElement(subroutineBody,SYMBOL); //add the symbol "{"
         while(this.currentElement.getTextContent().matches(VAR)){
             compileVarDec(subroutineBody);
         }
         compileStatement(subroutineBody);
-        addSymbol(subroutineBody); //add the symbol "}"
+        addElement(subroutineBody,SYMBOL); //add the symbol "}"
     }
 
     /**
@@ -225,14 +227,14 @@ public class CompilationEngine {
         Element varDec= xmlDoc.createElement(VAR_DEC);
         subroutineBody.appendChild(varDec);
 
-        addKeyword(varDec);// add the var keyword
+        addElement(varDec,KEYWORD);// add the var keyword
         //check if the parameter is an int , a char or a boolean or an object based class
         checkAVarType(varDec);
-        addIdentifier(varDec); //add the name of the variable
+        addElement(varDec,IDENTIFIER); //add the name of the variable
 
         // check if another variable are declared of the same type
         checkForAnotherVariable(varDec);
-        addSymbol(varDec); //add the symbol ";"
+        addElement(varDec,SYMBOL); //add the symbol ";"
     }
 
     /**
@@ -271,18 +273,18 @@ public class CompilationEngine {
         Element let= xmlDoc.createElement(LET_STATEMENT);
         statement.appendChild(let);
 
-        addKeyword(let); //add the let keyword
-        addIdentifier(let); //add the name of the variable
+        addElement(let,KEYWORD); //add the let keyword
+        addElement(let,IDENTIFIER); //add the name of the variable
 
         if(this.currentElement.getTextContent().matches(OPEN_SQUARE_BRACKET)){
-            addSymbol(let); //add the symbol "["
+            addElement(let,SYMBOL); //add the symbol "["
             compileExpression(let);
-            addSymbol(let); //add the symbol "]"
+            addElement(let,SYMBOL); //add the symbol "]"
         }
-        //todo maybe add calling for a method
-        addSymbol(let); // add the symbol "="
+
+        addElement(let,SYMBOL); // add the symbol "="
         compileExpression(let);
-        addSymbol(let); //add the symbol ";"
+        addElement(let,SYMBOL); //add the symbol ";"
 
     }
 
@@ -295,7 +297,7 @@ public class CompilationEngine {
         Element whileStatement= xmlDoc.createElement(WHILE_STATEMENT);
         statement.appendChild(whileStatement);
 
-        addKeyword(whileStatement); //add the while keyword
+        addElement(whileStatement,KEYWORD); //add the while keyword
 
         //compile the while condition
         compileProgramFlowCondition(whileStatement);
@@ -314,7 +316,7 @@ public class CompilationEngine {
         statement.appendChild(ifStatement);
 
         //compile the if condition
-        addKeyword(ifStatement); // add the if keyword
+        addElement(ifStatement,KEYWORD); // add the if keyword
         compileProgramFlowCondition(ifStatement);
 
         //compile the if statement
@@ -322,7 +324,7 @@ public class CompilationEngine {
 
         //compile the else statement if it exists
         if(this.currentElement.getTextContent().matches(ELSE)){
-            addKeyword(ifStatement); //add the else keyword
+            addElement(ifStatement,KEYWORD); //add the else keyword
             compileProgramFlowStatement(ifStatement);
         }
     }
@@ -336,22 +338,22 @@ public class CompilationEngine {
         Element doStatement= xmlDoc.createElement(DO_STATEMENT);
         statement.appendChild(doStatement);
 
-        addKeyword(doStatement); // add the do keyword
+        addElement(doStatement,KEYWORD); // add the do keyword
 
-        addIdentifier(doStatement); //add the name of the class or the name of the subroutine
+        addElement(doStatement,IDENTIFIER); //add the name of the class or the name of the subroutine
 
         //in case the call wasn't made of the class
         if(this.currentElement.getTextContent().matches(DOT)){
-            addSymbol(doStatement); //add the symbol "."
-            addIdentifier(doStatement); //add the name of the subroutine
+            addElement(doStatement,SYMBOL); //add the symbol "."
+            addElement(doStatement,IDENTIFIER); //add the name of the subroutine
         }
 
         // compile the parameter list
-        addSymbol(doStatement); //add the symbol "("
+        addElement(doStatement,SYMBOL); //add the symbol "("
         compileExpressionList(doStatement);
-        addSymbol(doStatement); //add the symbol ")"
+        addElement(doStatement,SYMBOL); //add the symbol ")"
 
-        addSymbol(doStatement); // add the symbol ";"
+        addElement(doStatement,SYMBOL); // add the symbol ";"
     }
 
     /**
@@ -363,11 +365,11 @@ public class CompilationEngine {
         Element returnStatement= xmlDoc.createElement(RETURN_STATEMENT);
         statement.appendChild(returnStatement);
 
-        addKeyword(returnStatement); //add the return keyword
+        addElement(returnStatement,KEYWORD); //add the return keyword
         if(!this.currentElement.getTextContent().matches(SEMI_COLON)){
             compileExpression(returnStatement);
         }
-        addSymbol(returnStatement); //add the symbol ";"
+        addElement(returnStatement,SYMBOL); //add the symbol ";"
     }
     /**
      * compile an expression list
@@ -385,7 +387,7 @@ public class CompilationEngine {
 
             //check for other expressions
             while(this.currentElement.getTextContent().matches(COMMA)){
-                addSymbol(expressionList); //add the symbol ","
+                addElement(expressionList,SYMBOL); //add the symbol ","
                 compileExpression(expressionList);
             }
         }
@@ -408,7 +410,7 @@ public class CompilationEngine {
         compileTerm(expression);
         // check for operators if so compile another term
         while(this.currentElement.getTextContent().matches(OPERATORS)){
-           addSymbol(expression);
+           addElement(expression,SYMBOL);
            compileTerm(expression);
        }
 
@@ -424,35 +426,39 @@ public class CompilationEngine {
         rootElement.appendChild(term);
 
         if(this.currentElement.getTextContent().matches(KEYWORD_CONSTANT)){
-            addKeyword(term); //add the keyword this
+            addElement(term,KEYWORD); //add the keyword this
         }else if(this.currentElement.getTextContent().matches(DECIMAL_CONSTANT)){
-            addIntegerConstant(term); // add the integer constant
+            addElement(term,INTEGER_CONSTANT); // add the integer constant
         }else if(this.currentElement.getTextContent().matches(STR_CONSTANT)){
-            addStringConstant(term); //add the string constant
+            addElement(term,STRING_CONSTANT); //add the string constant
         }
         else{
             if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
-                addSymbol(term); //add the symbol "("
+                addElement(term,SYMBOL); //add the symbol "("
                 compileExpression(term);
-                addSymbol(term); //add the symbol ")"
+                addElement(term,SYMBOL); //add the symbol ")"
             }
-            addIdentifier(term);
+            addElement(term,IDENTIFIER);
             if(this.currentElement.getTextContent().matches(OPEN_SQUARE_BRACKET)){
-                addSymbol(term); //add the symbol "["
+
+                addElement(term,SYMBOL); //add the symbol "["
                 compileExpression(term);
-                addSymbol(term); //add the symbol "]"
+                addElement(term,SYMBOL); //add the symbol "]"
+
             }else if(this.currentElement.getTextContent().matches(DOT)){
-                addSymbol(term); //add the symbol "."
-                addIdentifier(term); //add the name of the method
-                addSymbol(term); //add the symbol "("
+
+                addElement(term,SYMBOL); //add the symbol "."
+                addElement(term,IDENTIFIER); //add the name of the method
+                addElement(term,SYMBOL); //add the symbol "("
                 compileExpressionList(term);
-                addSymbol(term); //add the symbol ")"
+                addElement(term,SYMBOL); //add the symbol ")"
+
             }else if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
-                addSymbol(term); //add the symbol "("
+                addElement(term,SYMBOL); //add the symbol "("
                 compileExpressionList(term);
-                addSymbol(term); //add the symbol ")"
-            }else if (this.currentElement.getTextContent().matches(UNARY_OP)){ //compile unary operation
-                addSymbol(term); //add the symbol "~,-"
+                addElement(term,SYMBOL); //add the symbol ")"
+            }else if (this.currentElement.getTextContent().matches(UNARY_OP)){
+                addElement(term,SYMBOL); //add the symbol "~,-"
                 compileTerm(term);
             }
         }
@@ -470,90 +476,29 @@ public class CompilationEngine {
     }
 
     /**
-     * add a keyword element to the xml doc
-     * @param mainElement the father element
+     * add an element whether it is a keyword, identifier, symbol or constant
+     * @param rootElement the root element
+     * @param tag the tag name of the element
      */
-    private void addKeyword(Element mainElement){
+    private void addElement(Element rootElement, String tag){
         //set keywordElement
-        Element keywordElement =xmlDoc.createElement(KEYWORD);
-        Text keywordText= xmlDoc.createTextNode(this.currentElement.getTextContent());
-        keywordElement.appendChild(keywordText);
+        Element tagElement =xmlDoc.createElement(tag);
+        Text tagText= xmlDoc.createTextNode(this.currentElement.getTextContent());
+        tagElement.appendChild(tagText);
 
         //connect to the father element
-        mainElement.appendChild(keywordElement);
+        rootElement.appendChild(tagElement);
         advanceElement();
     }
 
-    /**
-     * add an identifier to the xml doc
-     * @param mainElement the father element
-     */
-    private void addIdentifier(Element mainElement){
-        //set identifierElement
-        Element identifierElement =xmlDoc.createElement(IDENTIFIER);
-        Text name= xmlDoc.createTextNode(this.currentElement.getTextContent());
-        identifierElement.appendChild(name);
-
-        //connect to the father element
-        mainElement.appendChild(identifierElement);
-        advanceElement();
-    }
-
-    /**
-     * add a symbol to the xml doc
-     * @param  mainElement the father element
-     */
-    private void addSymbol(Element mainElement){
-        //set symbolElement
-        Element symbolElement= xmlDoc.createElement(SYMBOL);
-        Text symbolText= xmlDoc.createTextNode(this.currentElement.getTextContent());
-        symbolElement.appendChild(symbolText);
-
-        //connect to the father element
-        mainElement.appendChild(symbolElement);
-
-        advanceElement();
-    }
-
-    /**
-     * add a integer constant to the xml doc
-     * @param  mainElement the father element
-     */
-    private void addIntegerConstant(Element mainElement){
-        //set symbolElement
-        Element integerElement= xmlDoc.createElement(INTEGER_CONSTANT);
-        Text integerText= xmlDoc.createTextNode(this.currentElement.getTextContent());
-        integerElement.appendChild(integerText);
-
-        //connect to the father element
-        mainElement.appendChild(integerElement);
-
-        advanceElement();
-    }
-
-    /**
-     * add a string constant to the xml doc
-     * @param  mainElement the father element
-     */
-    private void addStringConstant(Element mainElement){
-        //set symbolElement
-        Element stringElement= xmlDoc.createElement(STRING_CONSTANT);
-        Text stringText= xmlDoc.createTextNode(this.currentElement.getTextContent());
-        stringElement.appendChild(stringText);
-
-        //connect to the father element
-        mainElement.appendChild(stringElement);
-
-        advanceElement();
-    }
 
     /**
      * check for another variable separated by comma
      */
     private void checkForAnotherVariable(Element varDecElement){
         while (this.currentElement.getTextContent().matches(COMMA)){
-            addSymbol(varDecElement); //add the comma
-            addIdentifier(varDecElement); //add a variable name
+            addElement(varDecElement,SYMBOL); //add the comma
+            addElement(varDecElement,IDENTIFIER); //add a variable name
         }
     }
 
@@ -563,10 +508,10 @@ public class CompilationEngine {
      */
     private void checkAVarType(Element rootElement){
         if(this.currentElement.getTextContent().matches(TYPE)){
-            addKeyword(rootElement);
+            addElement(rootElement,KEYWORD);
         }
         else{
-            addIdentifier(rootElement); // add a object base parameter type
+            addElement(rootElement,IDENTIFIER); // add a object base parameter type
         }
     }
 
@@ -576,9 +521,9 @@ public class CompilationEngine {
      */
     private void compileProgramFlowStatement(Element rootElement){
 
-        addSymbol(rootElement); //add the symbol "{"
+        addElement(rootElement,SYMBOL); //add the symbol "{"
         compileStatement(rootElement);
-        addSymbol(rootElement); //add the symbol "}"
+        addElement(rootElement,SYMBOL); //add the symbol "}"
     }
 
     /**
@@ -586,9 +531,9 @@ public class CompilationEngine {
      * @param rootElement the root element
      */
     private void compileProgramFlowCondition(Element rootElement){
-        addSymbol(rootElement); // add the symbol "("
+        addElement(rootElement,SYMBOL); // add the symbol "("
         compileExpression(rootElement);
-        addSymbol(rootElement); //add the symbol ")"
+        addElement(rootElement,SYMBOL); //add the symbol ")"
     }
 
 }

@@ -89,15 +89,15 @@ public class IO {
                  BufferedReader reader = new BufferedReader(jackFile)) {
 
                 //read the file and tokenize it
-                //readAndTokenize(reader, jackList.get(j).getAbsolutePath());
+                readAndTokenize(reader, outputFileName);
 
                 //compile
                 compileFile( outputFileName);
             } catch (IOException e) {
                 e.printStackTrace();}
-//            catch (ParserConfigurationException e2){
-//                e2.printStackTrace();
-//            }
+            catch (ParserConfigurationException e2){
+                e2.printStackTrace();
+            }
         }
     }
 
@@ -153,27 +153,27 @@ public class IO {
         }
         return location;
     }
-//
-//    /**
-//     * read and tokenize a specific file
-//     * @param reader a bufferReader
-//     * @param outputFileName the current name of the output file
-//     * @throws IOException
-//     */
-//    private static void readAndTokenize(BufferedReader reader, String outputFileName)
-//            throws IOException, ParserConfigurationException {
-//        //create a xml document
-//        Document xmlDoc = createXmlDoc();
-//
-//        Tokenizer tokenizer = new Tokenizer(); //define a new tokenizer
-//        String text;
-//        while ((text = reader.readLine()) != null) // add the lines to the container
-//        {
-//            tokenizer.getJackLines().add(text);
-//        }
-//        xmlDoc= tokenizer.tokenizeJackFile(xmlDoc); // tokenize the vm text
-//        writeXml(outputFileName,xmlDoc);
-//    }
+
+    /**
+     * read and tokenize a specific file
+     * @param reader a bufferReader
+     * @param outputFileName the current name of the output file
+     * @throws IOException
+     */
+    private static void readAndTokenize(BufferedReader reader, String outputFileName)
+            throws IOException, ParserConfigurationException {
+        //create a xml document
+        Document xmlDoc = createXmlDoc();
+
+        Tokenizer tokenizer = new Tokenizer(xmlDoc); //define a new tokenizer
+        String text;
+        while ((text = reader.readLine()) != null) // add the lines to the container
+        {
+            tokenizer.getJackLines().add(text);
+        }
+        xmlDoc= tokenizer.readCodeFile(); // tokenize the vm text
+        writeXml(outputFileName,xmlDoc);
+    }
 
     /**
      * serialize the xml file

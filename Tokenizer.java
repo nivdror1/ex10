@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,23 +33,21 @@ public class Tokenizer {
 	
 	private TokenReader reader;
 	private PreProcessor preProcessor;
+	private ArrayList<String> jacklines;
 	
 	/**
 	 * the tokenizer constructor.
 	 */
-	public Tokenizer() {
-		
+	public Tokenizer(Document doc) {
+		this.jacklines=new ArrayList<>();
 		preProcessor = new PreProcessor();
 		
 		try{
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-
         
-        this.doc = dBuilder.newDocument();
+        this.doc = doc;
         // create and insert the root element
-        Element rootElement = doc.createElement(TOKENS);
-        doc.appendChild(rootElement);
+        Element rootElement = this.doc.createElement(TOKENS);
+        this.doc.appendChild(rootElement);
         
         reader = new TokenReader(rootElement, doc);
 
@@ -56,48 +55,31 @@ public class Tokenizer {
 	          e.printStackTrace();
 	    }
 	}
+
+	/**
+	 * get the jack code line
+	 * @return return JackLines
+	 */
+	public ArrayList<String> getJackLines(){
+		return this.jacklines;
+	}
 	
 /**
  * get buffered reader, pharse the file to tokenes and return the XML documents.
- * @param breader
  * @return return the xml document
  * @throws Exception
  */
-	public Document readCodeFile(BufferedReader breader) throws Exception{
+	public Document readCodeFile(){
 		// read line
-		String line = breader.readLine();
-		while(line != null){
-			reader.newLine(line);
+		for(int i=0;i<jacklines.size();i++){
+			reader.newLine(jacklines.get(i));
 			while(reader.getNextElement() != null){}
-			line = breader.readLine();
-			
 		}
-		//printToXML();
+
 		return this.doc;
 	}
 
-	/**
-	 * print the xml to the path specified at the first lineof the method.
-	 * used for debug.
-	 */
-	private void printToXML(){
-		String path = "C:\\Users\\omri\\Desktop\\nand\\cars.xml";
-        try{
-		
-		// write the content into xml file
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        DOMSource source = new DOMSource(doc);
-        StreamResult result = new StreamResult(new File(path));
-        transformer.transform(source, result);
-        
-        // Output to console for testing
-        StreamResult consoleResult = new StreamResult(System.out);
-        transformer.transform(source, consoleResult);
-     } catch (Exception e) {
-        e.printStackTrace();
-     }
-	}
+
 
 	/**
 	 * the main pharsing class
@@ -156,34 +138,36 @@ public class Tokenizer {
 		 * TODO throw exceptions
 		 * @return the next element if exists. if EOL, return null.
 		 */
-		public Element getNextElement() throws Exception{
-			if( (codeLine == null) || (codeLine.length() == 0) ){
+		public Element getNextElement() {
+			if ((codeLine == null) || (codeLine.length() == 0)) {
 				return null;
 			}
-			for(int i = 0; i < 5; i++){
-				
+			for (int i = 0; i < 5; i++) {
+
 				Matcher m = patterns[i].matcher(codeLine);
-				
-				if (m.find() && m.start() == 0){
-					
+
+				if (m.find() && m.start() == 0) {
+
 					String strToken = codeLine.substring(0, m.end());
 					Element element = doc.createElement(elementsTypes[i]);
 					element.appendChild(doc.createTextNode(strToken));
 					rootElement.appendChild(element);
-					
-					System.out.println(strToken);
+
+
 					int a = m.end();
 					String cutLine = "";
 					if (a < codeLine.length())
 						cutLine = codeLine.substring(a);
 					cutLine = cutLine.trim();
 					this.codeLine = cutLine;
-					
+
 					return element;
 				}
 			}
-			System.out.println("mismatch");
-			throw new Exception();
+			return null;
+			//todo when will you have exception?
+//			System.out.println("mismatch");
+//			throw new Exception();
 		}
 	}
 	
@@ -208,7 +192,8 @@ public class Tokenizer {
 			if(openMultilineComment){
 				if(line.contains("*/")){
 					openMultilineComment = false;
-					return preProcess(line.substring(line.indexOf("*/")));
+					return preProcess(line.substring(line.indexOf("*/")+2));
+
 				} else {
 					return "";
 				}
@@ -223,7 +208,6 @@ public class Tokenizer {
 			if( line.contains("/*") ){
 				openMultilineComment = true;
 				return this.preProcess(line.substring(line.indexOf("/*")));
-				
 			}
 			return line;
 		}
