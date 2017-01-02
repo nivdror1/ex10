@@ -103,7 +103,7 @@ public class Tokenizer {
 
 			
 			String keywordRegex = "class|constructor|function|method|field|static|var|int|char|boolean|void|true|false|null|this|let|do|if|else|while|return";
-			String symbolRegex = "\\.|\\{|\\}|\\(|\\)|;|\\,|\\[|\\]|\\*|\\-|\\+|/|&|<|>|=|~";//\\.|\\{|\\}";//|(|)|[|]|*|-|/|&|<|>|=|~";//TODO add '|'
+			String symbolRegex = "(\\.|\\{|\\}|\\(|\\)|;|\\,|\\[|\\]|\\*|\\-|\\+|/|&|<|>|=|~|\\|)";//\\.|\\{|\\}";//|(|)|[|]|*|-|/|&|<|>|=|~";//TODO add '|'
 			String integerConstantRegex = "[0-9]+";
 			String stringConstantRegex = "\"[^\"\n]+\""; // TODO
 			String identifierRegex = "\\b\\w+\\b";//"[A-Za-z]+";//|_][A-Z|a-z|_|0-9]*";
@@ -149,9 +149,14 @@ public class Tokenizer {
 				if (m.find() && m.start() == 0) {
 
 					String strToken = codeLine.substring(0, m.end());
+					if(this.codeLine.indexOf('\"')==0&& i==3){
+						strToken=this.codeLine.substring(1,strToken.length()-2);
+					}
+					strToken=" "+ strToken+" ";
 					Element element = doc.createElement(elementsTypes[i]);
 					element.appendChild(doc.createTextNode(strToken));
 					rootElement.appendChild(element);
+
 
 
 					int a = m.end();
@@ -160,6 +165,7 @@ public class Tokenizer {
 						cutLine = codeLine.substring(a);
 					cutLine = cutLine.trim();
 					this.codeLine = cutLine;
+
 
 					return element;
 				}
