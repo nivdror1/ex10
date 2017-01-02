@@ -52,14 +52,17 @@ public class CompilationEngine {
     private static final String COMMA="\\s*+,\\s*+";
     private static final String OPEN_SQUARE_BRACKET="\\s*+\\[\\s*+";
     private static final String OPEN_BRACKETS= "\\s*+\\(\\s*+";
+    private static final String CLOSE_BRACKETS= "\\s*+\\)\\s*+";
     private static final String END_BRACKETS= "\\s*+\\)\\s*+";
     private static final String DOT="\\s*+\\.\\s*+";
     private static final String SEMI_COLON="\\s*+;\\s*+";
     private static final String KEYWORD_CONSTANT="\\s*+(this|true|false|null)\\s*+";
-    private static final String OPERATORS= "\\s*+(\\||\\+|-|\\*|/|&amp|&lt|&gt|=|)\\s*+";
+    private static final String OPERATORS= "\\s*+(\\||\\+|-|\\*|/|&|<|>||\"|=|~)\\s*+";
     private static final String UNARY_OP= "\\s*+(~|-)\\s*+";
-    private static final String STR_CONSTANT= "\\s*+\"[a-zA-Z]\\w*+()*+(\\w*+( )*+(\\?|!|:|\\.|,)?)*+\"( )*+";
+    private static final String STR_CONSTANT= "\\s*+[a-zA-Z]\\w*+()*+(\\w*+( )*+(\\?|!|:|\\.|,)?)*+( )*+";
     private static final String DECIMAL_CONSTANT= "\\s*+[0-9]++\\s*+";
+    private static final String TERM_SIGNIFIER=OPEN_BRACKETS+"|"+OPEN_SQUARE_BRACKET+
+            "|"+DOT+"|"+UNARY_OP+"|"+SEMI_COLON+"|"+COMMA+"|"+OPERATORS+"|"+CLOSE_BRACKETS;
 
     /** the tokens input xml*/
     private Document tokenXml;
@@ -420,50 +423,69 @@ public class CompilationEngine {
      * compile a term
      * @param rootElement the root element
      */
-    private void compileTerm(Element rootElement){
+    private void compileTerm(Element rootElement){ //todo this is string constant term!
         // add a term element
         Element term= xmlDoc.createElement(TERM);
         rootElement.appendChild(term);
 
-        if(this.currentElement.getTextContent().matches(KEYWORD_CONSTANT)){
-            addElement(term,KEYWORD); //add the keyword this
-        }else if(this.currentElement.getTextContent().matches(DECIMAL_CONSTANT)){
-            addElement(term,INTEGER_CONSTANT); // add the integer constant
-        }else if(this.currentElement.getTextContent().matches(STR_CONSTANT)){
+        if(this.currentElement.getTagName().matches(STRING_CONSTANT)){
             addElement(term,STRING_CONSTANT); //add the string constant
         }
-        else{
-            if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
-                addElement(term,SYMBOL); //add the symbol "("
-                compileExpression(term);
-                addElement(term,SYMBOL); //add the symbol ")"
-            }
-            addElement(term,IDENTIFIER);
-            if(this.currentElement.getTextContent().matches(OPEN_SQUARE_BRACKET)){
+        else {
+            compileTermKeywordConstant(term);
+        }
+    }
 
-                addElement(term,SYMBOL); //add the symbol "["
-                compileExpression(term);
-                addElement(term,SYMBOL); //add the symbol "]"
+    private void compileTermKeywordConstant(Element term){
+        if(this.currentElement.getTextContent().matches(KEYWORD_CONSTANT)){//todo change soon!!!!!!!
+             addElement(term,KEYWORD); //add the keyword this
+        }else{
+            compileDecimalConstant(term);
+        }
+    }
+    private void compileDecimalConstant(Element term){
+        if(this.currentElement.getTextContent().matches(DECIMAL_CONSTANT)){ //todo change soon!!!!!!!
+            addElement(term,INTEGER_CONSTANT); // add the integer constant
+        }else{
+            compileSomething(term);
+        }
+    }
+    private void compileSomething(Element term){
 
-            }else if(this.currentElement.getTextContent().matches(DOT)){
-
-                addElement(term,SYMBOL); //add the symbol "."
-                addElement(term,IDENTIFIER); //add the name of the method
-                addElement(term,SYMBOL); //add the symbol "("
-                compileExpressionList(term);
-                addElement(term,SYMBOL); //add the symbol ")"
-
-            }else if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
-                addElement(term,SYMBOL); //add the symbol "("
-                compileExpressionList(term);
-                addElement(term,SYMBOL); //add the symbol ")"
-            }else if (this.currentElement.getTextContent().matches(UNARY_OP)){
-                addElement(term,SYMBOL); //add the symbol "~,-"
-                compileTerm(term);
-            }
+        if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
+            addElement(term,SYMBOL); //add the symbol "("
+            compileExpression(term);
+            addElement(term,SYMBOL); //add the symbol ")"
+        }
+        if(this.currentElement.getTagName().matches(IDENTIFIER)) {
+            addElement(term, IDENTIFIER);
         }
 
+        if(this.currentElement.getTextContent().matches(OPEN_SQUARE_BRACKET)){
 
+            addElement(term,SYMBOL); //add the symbol "["
+            compileExpression(term);
+            addElement(term,SYMBOL); //add the symbol "]"
+
+        }else if(this.currentElement.getTextContent().matches(DOT)){
+
+            addElement(term,SYMBOL); //add the symbol "."
+            addElement(term,IDENTIFIER); //add the name of the method
+            addElement(term,SYMBOL); //add the symbol "("
+            compileExpressionList(term);
+            addElement(term,SYMBOL); //add the symbol ")"
+
+        }else if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
+            addElement(term,SYMBOL); //add the symbol "("
+            compileExpressionList(term);
+            addElement(term,SYMBOL); //add the symbol ")"
+           }
+         else if (this.currentElement.getTextContent().matches(UNARY_OP)
+                && this.currentElement.getPreviousSibling().
+                getPreviousSibling().getTextContent().matches(OPEN_BRACKETS)){
+            addElement(term,SYMBOL); //add the symbol "~,-"
+            compileTerm(term);
+        }
     }
     /**
      * advance the element

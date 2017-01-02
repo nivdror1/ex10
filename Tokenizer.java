@@ -150,7 +150,7 @@ public class Tokenizer {
 
 					String strToken = codeLine.substring(0, m.end());
 					if(this.codeLine.indexOf('\"')==0&& i==3){
-						strToken=this.codeLine.substring(1,strToken.length()-2);
+						strToken=this.codeLine.substring(1,strToken.length()-1);
 					}
 					strToken=" "+ strToken+" ";
 					Element element = doc.createElement(elementsTypes[i]);
