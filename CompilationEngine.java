@@ -211,12 +211,12 @@ public class CompilationEngine {
 
     /**
      * compile local variable declarations
-     * @param subroutineBody the subroutine body element
+     * @param rootElement the current block element
      */
-    private void compileVarDec(Element subroutineBody){
+    private void compileVarDec(Element rootElement){
         //add a local variable declaration
         Element varDec= xmlDoc.createElement(VAR_DEC);
-        subroutineBody.appendChild(varDec);
+        rootElement.appendChild(varDec);
 
         addElement(varDec,KEYWORD);// add the var keyword
         //check if the parameter is an int , a char or a boolean or an object based class
@@ -551,6 +551,9 @@ public class CompilationEngine {
     private void compileProgramFlowStatement(Element rootElement){
 
         addElement(rootElement,SYMBOL); //add the symbol "{"
+        if(this.currentElement.getTextContent().matches(VAR)){
+            compileVarDec(rootElement);
+        }
         compileStatement(rootElement);
         addElement(rootElement,SYMBOL); //add the symbol "}"
     }
