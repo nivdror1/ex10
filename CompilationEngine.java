@@ -1,15 +1,6 @@
-import javax.print.Doc;
 
-import com.sun.org.apache.bcel.internal.generic.SASTORE;
-import com.sun.org.apache.xalan.internal.xsltc.dom.SimpleResultTreeImpl;
-import com.sun.org.apache.xalan.internal.xsltc.runtime.*;
 import org.w3c.dom.*;
-import org.w3c.dom.Node;
 
-import java.util.ArrayList;
-import java.util.Stack;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /** jack analyzer compilation engine*/
 public class CompilationEngine {
@@ -52,17 +43,14 @@ public class CompilationEngine {
     private static final String COMMA="\\s*+,\\s*+";
     private static final String OPEN_SQUARE_BRACKET="\\s*+\\[\\s*+";
     private static final String OPEN_BRACKETS= "\\s*+\\(\\s*+";
-    private static final String CLOSE_BRACKETS= "\\s*+\\)\\s*+";
     private static final String END_BRACKETS= "\\s*+\\)\\s*+";
     private static final String DOT="\\s*+\\.\\s*+";
     private static final String SEMI_COLON="\\s*+;\\s*+";
     private static final String KEYWORD_CONSTANT="\\s*+(this|true|false|null)\\s*+";
     private static final String OPERATORS= "\\s*+(\\||\\+|-|\\*|/|&|<|>||\"|=|~)\\s*+";
     private static final String UNARY_OP= "\\s*+(~|-)\\s*+";
-    private static final String STR_CONSTANT= "\\s*+[a-zA-Z]\\w*+()*+(\\w*+( )*+(\\?|!|:|\\.|,)?)*+( )*+";
     private static final String DECIMAL_CONSTANT= "\\s*+[0-9]++\\s*+";
-    private static final String TERM_SIGNIFIER=OPEN_BRACKETS+"|"+OPEN_SQUARE_BRACKET+
-            "|"+DOT+"|"+UNARY_OP+"|"+SEMI_COLON+"|"+COMMA+"|"+OPERATORS+"|"+CLOSE_BRACKETS;
+
 
     /** the tokens input xml*/
     private Document tokenXml;
@@ -420,10 +408,10 @@ public class CompilationEngine {
     }
 
     /**
-     * compile a term
+     * begin compile a term - start with String constant
      * @param rootElement the root element
      */
-    private void compileTerm(Element rootElement){ //todo this is string constant term!
+    private void compileTerm(Element rootElement){
         // add a term element
         Element term= xmlDoc.createElement(TERM);
         rootElement.appendChild(term);
@@ -432,35 +420,40 @@ public class CompilationEngine {
             addElement(term,STRING_CONSTANT); //add the string constant
         }
         else {
-            compileTermKeywordConstant(term);
+            compileTermKeywordConstant(term); //continue term compilation
         }
     }
 
+    /**
+     * continue term compilation - continue with keyword constant
+     * @param term the root element
+     */
     private void compileTermKeywordConstant(Element term){
         if(this.currentElement.getTextContent().matches(KEYWORD_CONSTANT)){//todo change soon!!!!!!!
              addElement(term,KEYWORD); //add the keyword this
         }else{
-            compileDecimalConstant(term);
+            compileDecimalConstant(term); //continue term compilation
         }
     }
+
+    /**
+     * continue term compilation - continue with decimal constant
+     * @param term the root element
+     */
     private void compileDecimalConstant(Element term){
         if(this.currentElement.getTextContent().matches(DECIMAL_CONSTANT)){ //todo change soon!!!!!!!
             addElement(term,INTEGER_CONSTANT); // add the integer constant
         }else{
-            compileSomething(term);
+            compileTermContinuation(term); //continue term compilation
         }
     }
-    private void compileSomething(Element term){
+    /**
+     * continue term compilation - continue with array index or a method or new expression list or unary operation
+     * @param term the root element
+     */
+    private void compileTermContinuation(Element term){
 
-        if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
-            addElement(term,SYMBOL); //add the symbol "("
-            compileExpression(term);
-            addElement(term,SYMBOL); //add the symbol ")"
-        }
-        if(this.currentElement.getTagName().matches(IDENTIFIER)) {
-            addElement(term, IDENTIFIER);
-        }
-
+        compileTermOfInitExpression(term); // check for initiation of a new expression
         if(this.currentElement.getTextContent().matches(OPEN_SQUARE_BRACKET)){
 
             addElement(term,SYMBOL); //add the symbol "["
@@ -485,6 +478,20 @@ public class CompilationEngine {
                 getPreviousSibling().getTextContent().matches(OPEN_BRACKETS)){
             addElement(term,SYMBOL); //add the symbol "~,-"
             compileTerm(term);
+        }
+    }
+    /**
+     * continue term compilation - continue with a new expression
+     * @param term the root element
+     */
+    private void compileTermOfInitExpression(Element term){
+        if(this.currentElement.getTextContent().matches(OPEN_BRACKETS)){
+            addElement(term,SYMBOL); //add the symbol "("
+            compileExpression(term);
+            addElement(term,SYMBOL); //add the symbol ")"
+        }
+        if(this.currentElement.getTagName().matches(IDENTIFIER)) {
+            addElement(term, IDENTIFIER);
         }
     }
     /**
