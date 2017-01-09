@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 public class Tokenizer {
 	
 
@@ -102,31 +103,35 @@ public class Tokenizer {
 			this.rootElement = root;
 
 			
-			String keywordRegex = "class|constructor|function|method|field|static|var|int |char |boolean |void |true|false|null|this|let |do |if|else|while|return ";
+			String keywordRegex = "\\bclass\\b|\\bconstructor\\b|\\bfunction\\b|\\bmethod\\b|\\bfield\\b|\\bstatic\\b|\\bvar\\b|\\bint\\b|\\bchar\\b|\\bboolean\\b|\\bvoid\\b|\\btrue\\b|\\bfalse\\b|\\bnull\\b|\\bthis\\b|\\blet\\b|\\bdo\\b|\\bif\\b|\\belse\\b|\\bwhile\\b|\\breturn\\b";
 			String symbolRegex = "(\\.|\\{|\\}|\\(|\\)|;|\\,|\\[|\\]|\\*|\\-|\\+|/|&|<|>|=|~|\\|)";//\\.|\\{|\\}";//|(|)|[|]|*|-|/|&|<|>|=|~";//TODO add '|'
 			String integerConstantRegex = "[0-9]+";
 			String stringConstantRegex = "\"[^\"\n]+\""; // TODO
 			String identifierRegex = "\\b\\w+\\b";//"[A-Za-z]+";//|_][A-Z|a-z|_|0-9]*";
+			String oneLineCommentRegex = "//.*";
 			
 			Pattern keyWordPattern = Pattern.compile(keywordRegex);
 			Pattern symbolPattern = Pattern.compile(symbolRegex);
 			Pattern integerConstantPattern = Pattern.compile(integerConstantRegex);
 			Pattern stringConstantPattern = Pattern.compile(stringConstantRegex);
 			Pattern identifierPattern = Pattern.compile(identifierRegex);
+			Pattern oneLineCommentPattern = Pattern.compile(oneLineCommentRegex);
 			
-			this.patterns = new Pattern[5];
-			patterns[0] = keyWordPattern;
-			patterns[1] = symbolPattern;
-			patterns[2] = integerConstantPattern;
-			patterns[3] = stringConstantPattern;
-			patterns[4] = identifierPattern;
+			this.patterns = new Pattern[6];
+			patterns[1] = keyWordPattern;
+			patterns[2] = symbolPattern;
+			patterns[3] = integerConstantPattern;
+			patterns[4] = stringConstantPattern;
+			patterns[5] = identifierPattern;
+			patterns[0] = oneLineCommentPattern;
 			
-			elementsTypes = new String[5];
-			elementsTypes[0] = KEYWORD;
-			elementsTypes[1] = SYMBOL;
-			elementsTypes[2] = INTEGER_CONSTANT;
-			elementsTypes[3] = STRING_CONSTANT;
-			elementsTypes[4] = IDENTIFIER;
+			
+			elementsTypes = new String[6];
+			elementsTypes[1] = KEYWORD;
+			elementsTypes[2] = SYMBOL;
+			elementsTypes[3] = INTEGER_CONSTANT;
+			elementsTypes[4] = STRING_CONSTANT;
+			elementsTypes[5] = IDENTIFIER;
 		}
 		
 		public void newLine(String codeLine){
@@ -142,11 +147,17 @@ public class Tokenizer {
 			if ((codeLine == null) || (codeLine.length() == 0)) {
 				return null;
 			}
-			for (int i = 0; i < 5; i++) {
+			for (int i = 0; i < 6; i++) {
 
 				Matcher m = patterns[i].matcher(codeLine);
 
 				if (m.find() && m.start() == 0) {
+					
+					if(i == 0){
+						// comment to the end of the line
+						this.codeLine = "";
+						return null;
+					}
 
 					String strToken = codeLine.substring(0, m.end());
 					if(this.codeLine.indexOf('\"')==0&& i==3){
@@ -206,10 +217,10 @@ public class Tokenizer {
 			}
 			
 			//	comment to the end of the line
-			if(line.contains("//")){
-				line = line.substring(0, line.indexOf("//")).trim();
-				return line;
-			}
+//			if(line.contains("//")){
+//				line = line.substring(0, line.indexOf("//")).trim();
+//				return line;
+//			}
 			
 			if( line.contains("/*") ){
 				openMultilineComment = true;
@@ -217,6 +228,20 @@ public class Tokenizer {
 			}
 			return line;
 		}
+		
+//		private int charCounter(String str, char c){
+//			int counter = 0;
+//			for(int i = 0; i < str.length(); i++){
+//				if(str.charAt(i) == c){
+//					counter++;
+//				}
+//			}
+//			return counter;
+//		}
+//		private boolean isOdd(int val){
+//			return (val%2 != 0);
+//		}
+		//int count = StringUtils.countMatches("a.b.c.d", ".");
 		
 		
 		
