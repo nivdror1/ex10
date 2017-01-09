@@ -253,6 +253,10 @@ public class CompilationEngine {
                 compileReturn(statement);
             }
         }
+        if(!statement.hasChildNodes()){
+            Text empty= xmlDoc.createTextNode("\t");
+            statement.appendChild(empty);
+        }
     }
 
     /**
@@ -475,7 +479,7 @@ public class CompilationEngine {
            }
          else if (this.currentElement.getTextContent().matches(UNARY_OP)
                 && this.currentElement.getPreviousSibling().
-                getPreviousSibling().getTextContent().matches(OPEN_BRACKETS+"|\\s*+(=|&)\\s*+")){
+                getPreviousSibling().getTextContent().matches(OPEN_BRACKETS+"|\\s*+(=|&|>|<|return)\\s*+")){
             addElement(term,SYMBOL); //add the symbol "~,-"
             compileTerm(term);
         }
