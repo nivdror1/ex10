@@ -160,7 +160,7 @@ public class Tokenizer {
 					}
 
 					String strToken = codeLine.substring(0, m.end());
-					if(this.codeLine.indexOf('\"')==0&& i==3){
+					if(this.codeLine.indexOf('\"')==0&& i==4){
 						strToken=this.codeLine.substring(1,strToken.length()-1);
 					}
 					strToken=" "+ strToken+" ";
