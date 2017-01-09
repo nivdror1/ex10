@@ -475,7 +475,7 @@ public class CompilationEngine {
            }
          else if (this.currentElement.getTextContent().matches(UNARY_OP)
                 && this.currentElement.getPreviousSibling().
-                getPreviousSibling().getTextContent().matches(OPEN_BRACKETS)){
+                getPreviousSibling().getTextContent().matches(OPEN_BRACKETS"|\\s*+(=|&)\\s*+")){
             addElement(term,SYMBOL); //add the symbol "~,-"
             compileTerm(term);
         }
