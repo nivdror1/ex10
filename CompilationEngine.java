@@ -63,7 +63,7 @@ public class CompilationEngine {
     /** a node list made by the tokenizer*/
     private NodeList tokenList;
 
-    private int counter=1;
+    private int counter=0;
 
     /** constructor*/
     public CompilationEngine( Document tokenXml, Document xmlDoc){
@@ -72,7 +72,7 @@ public class CompilationEngine {
         xmlDoc.setXmlStandalone(true);
         Element rootElement= tokenXml.getDocumentElement();
         this.tokenList=rootElement.getChildNodes();
-        this.currentElement= (Element)this.tokenList.item(1);
+        this.currentElement= (Element)this.tokenList.item(0);
     }
 
     /**
@@ -479,7 +479,7 @@ public class CompilationEngine {
            }
          else if (this.currentElement.getTextContent().matches(UNARY_OP)
                 && this.currentElement.getPreviousSibling().
-                getPreviousSibling().getTextContent().matches(OPEN_BRACKETS+"|\\s*+(=|&|>|<|return)\\s*+")){
+                getTextContent().matches(OPEN_BRACKETS+"|\\s*+(=|&|>|<|return)\\s*+")){
             addElement(term,SYMBOL); //add the symbol "~,-"
             compileTerm(term);
         }
@@ -502,7 +502,7 @@ public class CompilationEngine {
      * advance the element
      */
     private void advanceElement(){
-        counter+=2;
+        counter+=1;
         if(counter<tokenList.getLength()) {
             this.currentElement = (Element) tokenList.item(counter);
         }

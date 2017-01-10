@@ -29,7 +29,7 @@ public class IO {
     private static final Pattern JACK_PATTERN =Pattern.compile(JACK);
     private static final int FIVE =5;
     private static final String SLASH="\\";
-    private static final String NEW_LINE="\n";
+
 
 
     /**
@@ -88,35 +88,35 @@ public class IO {
                  BufferedReader reader = new BufferedReader(jackFile)) {
 
                 //read the file and tokenize it
-                readAndTokenize(reader, outputFileName);
+                Document doc = readAndTokenize(reader, outputFileName);
 
                 //compile
-                compileFile( outputFileName);
+                compileFile( outputFileName,doc);
             } catch (IOException e) {
-                e.printStackTrace();}
-            catch (ParserConfigurationException e2){
+                e.printStackTrace();
+            }catch (ParserConfigurationException e2){
                 e2.printStackTrace();
             }
+
         }
     }
 
     /**
      * compile all files and write a xml file for each and every of them
      * @param location the location of the output
+     * @param doc the tokenize xml doc
      */
-    private static void compileFile(String location){
+    private static void compileFile(String location, Document doc){
         // change the output location
         String outputFileName=location.substring(0,location.length()-FIVE);
         outputFileName+=XML;
 
         try{
-            File InputFile=new File(location);
-            Document inputXml= getDocumentBuilder().parse(InputFile);
 
             //create the xml document
             Document xmlDoc= createXmlDoc();
             // compile the Tokenizer output
-            CompilationEngine compiler = new CompilationEngine(inputXml, xmlDoc);
+            CompilationEngine compiler = new CompilationEngine(doc, xmlDoc);
             compiler.compileClass();
             xmlDoc=compiler.getXmlDoc();
 
@@ -126,12 +126,6 @@ public class IO {
         }
         catch (ParserConfigurationException e){
             e.printStackTrace();
-        }
-        catch (SAXException e2){
-            e2.printStackTrace();
-        }
-        catch (IOException e3){
-            e3.printStackTrace();
         }
 
     }
@@ -159,7 +153,7 @@ public class IO {
      * @param outputFileName the current name of the output file
      * @throws IOException
      */
-    private static void readAndTokenize(BufferedReader reader, String outputFileName)
+    private static Document readAndTokenize(BufferedReader reader, String outputFileName)
             throws IOException, ParserConfigurationException {
         //create a xml document
         Document xmlDoc = createXmlDoc();
@@ -171,7 +165,8 @@ public class IO {
             tokenizer.getJackLines().add(text);
         }
         xmlDoc= tokenizer.readCodeFile(); // tokenize the vm text
-        writeXml(outputFileName,xmlDoc);
+        return xmlDoc;
+        //writeXml(outputFileName,xmlDoc);
     }
 
     /**
