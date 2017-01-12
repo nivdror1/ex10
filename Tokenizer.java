@@ -72,8 +72,8 @@ public class Tokenizer {
  */
 	public Document readCodeFile(){
 		// read line
-		for(int i=0;i<jacklines.size();i++){
-			reader.newLine(jacklines.get(i));
+		for(int k=0;k<jacklines.size();k++){
+			reader.newLine(jacklines.get(k));
 			while(reader.getNextElement() != null){}
 		}
 
@@ -200,50 +200,61 @@ public class Tokenizer {
 		 * is called from the newLine method of the tokenReader.
 		 */
 		public String preProcess(String line){
-			
-			line = line.trim();
-			
-			if(line.length() == 0)
-				return line;
-			
+			line= line.trim();
 			if(openMultilineComment){
-				if(line.contains("*/")){
-					openMultilineComment = false;
-					return preProcess(line.substring(line.indexOf("*/")+2));
-
-				} else {
-					return "";
-				}
+				return closeComment(line); // close a comment and returns a shorter string
 			}
-			
-			//	comment to the end of the line
-//			if(line.contains("//")){
-//				line = line.substring(0, line.indexOf("//")).trim();
-//				return line;
-//			}
-			
-			if( line.contains("/*") ){
-				openMultilineComment = true;
-				return this.preProcess(line.substring(line.indexOf("/*")));
+			return openComment(line); // open a comment and returns a shorter string
+		}
+
+		/**
+		 * delete the comment start
+		 * @param line the line being processed
+		 * @param length the length of the comments symbols
+		 * @param location the location of the initiation of the comment
+		 * @param flag a boolean variable to signify the openMultilineComment status
+		 * @return a string without these comments symbols
+		 */
+		private String dealWithComment(String line,int length,int location, boolean flag){
+			openMultilineComment = flag;
+			if(location==0){ // if the line start with a comment symbol
+				return line.substring(length);
+			}else if(!flag){ // if a "*/" char was seen at a new line
+				return line.substring(location+length);
+			}
+			else{ //if the line contains the comment symbol "/*"
+				if(line.contains("*/")){ //if a "*/" was seen at the same line
+					openMultilineComment=false;
+					return line.substring(0,location)+" "+ line.substring(line.indexOf("*/")+2);
+				}
+				return line.substring(0,location-1)+ line.substring(location+length);
+			}
+		}
+
+		private String closeComment(String line){
+			if(line.startsWith("*/")){
+				return preProcess(dealWithComment(line,2,0,false));
+			}
+			if(line.contains("*/")){
+				return preProcess(dealWithComment(line,2,line.indexOf("*/"),false));
+			} else {
+				return "";
+			}
+		}
+
+		private String openComment(String line){
+			if( line.startsWith("/**") ){
+				return this.preProcess(dealWithComment(line,3 ,0,true));
+			}else if (line.startsWith("/*")){
+				return this.preProcess(dealWithComment(line,2 ,0,true));
+			}
+			else if( line.contains("/**")){
+				return this.preProcess(dealWithComment(line,3,line.indexOf("/**"),true));
+			}else if(line.contains("/*")){
+				return this.preProcess(dealWithComment(line,2,line.indexOf("/*"),true));
 			}
 			return line;
 		}
-		
-//		private int charCounter(String str, char c){
-//			int counter = 0;
-//			for(int i = 0; i < str.length(); i++){
-//				if(str.charAt(i) == c){
-//					counter++;
-//				}
-//			}
-//			return counter;
-//		}
-//		private boolean isOdd(int val){
-//			return (val%2 != 0);
-//		}
-		//int count = StringUtils.countMatches("a.b.c.d", ".");
-		
-		
 		
 	}
 
