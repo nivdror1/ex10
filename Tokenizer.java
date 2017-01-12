@@ -230,7 +230,11 @@ public class Tokenizer {
 				return line.substring(0,location-1)+ line.substring(location+length);
 			}
 		}
-
+		/**
+		 * deals with a closing comment
+		 * @param line the line being read
+		 * @return the line without the comments
+		 */
 		private String closeComment(String line){
 			if(line.startsWith("*/")){
 				return preProcess(dealWithComment(line,2,0,false));
@@ -242,6 +246,11 @@ public class Tokenizer {
 			}
 		}
 
+		/**
+		 * deals with an opening comment
+		 * @param line the line being read
+		 * @return the line without the comments
+		 */
 		private String openComment(String line){
 			if( line.startsWith("/**") ){
 				return this.preProcess(dealWithComment(line,3 ,0,true));
