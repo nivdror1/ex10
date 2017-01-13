@@ -163,7 +163,7 @@ public class Tokenizer {
 			if ((codeLine == null) || (codeLine.length() == 0)) {
 				return null;
 			}
-			
+						
 			Matcher multilineCommentOpenMatcher = this.multiLineCommentOpenPattern.matcher(codeLine);
 			if (!insideMultilineComment && multilineCommentOpenMatcher.find() && multilineCommentOpenMatcher.start() == 0){
 				insideMultilineComment = true;
@@ -174,7 +174,7 @@ public class Tokenizer {
 					this.codeLine = "";
 					return null;
 				}
-				this.codeLine = codeLine.substring(codeLine.indexOf("*/") + 2);
+				this.codeLine = codeLine.substring(codeLine.indexOf("*/") + 2).trim();
 				this.justFinishedMulticomment = true;
 				this.insideMultilineComment = false;
 				return null;
