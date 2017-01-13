@@ -74,7 +74,7 @@ public class Tokenizer {
 		// read line
 		for(int k=0;k<jacklines.size();k++){
 			reader.newLine(jacklines.get(k));
-			while(reader.getNextElement() != null){}
+			while( (reader.getNextElement() != null) || (reader.justFinishedMulticomment) ){}
 		}
 
 		return this.doc;
@@ -96,12 +96,18 @@ public class Tokenizer {
 		
 		private String codeLine;
 		
+		public boolean justFinishedMulticomment;
+		private boolean insideMultilineComment;
+		private Pattern multiLineCommentOpenPattern;
+		
 		public TokenReader(Element root, Document doc) {
 			
 			this.doc = doc;
 			
 			this.rootElement = root;
-
+			
+			this.insideMultilineComment = false;
+			this.justFinishedMulticomment = false;
 			
 			String keywordRegex = "\\bclass\\b|\\bconstructor\\b|\\bfunction\\b|\\bmethod\\b|\\bfield\\b|\\bstatic\\b|\\bvar\\b|\\bint\\b|\\bchar\\b|\\bboolean\\b|\\bvoid\\b|\\btrue\\b|\\bfalse\\b|\\bnull\\b|\\bthis\\b|\\blet\\b|\\bdo\\b|\\bif\\b|\\belse\\b|\\bwhile\\b|\\breturn\\b";
 			String symbolRegex = "(\\.|\\{|\\}|\\(|\\)|;|\\,|\\[|\\]|\\*|\\-|\\+|/|&|<|>|=|~|\\|)";//\\.|\\{|\\}";//|(|)|[|]|*|-|/|&|<|>|=|~";//TODO add '|'
@@ -109,6 +115,8 @@ public class Tokenizer {
 			String stringConstantRegex = "\"[^\"\n]+\""; // TODO
 			String identifierRegex = "\\b\\w+\\b";//"[A-Za-z]+";//|_][A-Z|a-z|_|0-9]*";
 			String oneLineCommentRegex = "//.*";
+			String multiLineCommentOpenRegex = "/\\*.*";
+			String multiLineCommentCloseRegex = "\\*/";
 			
 			Pattern keyWordPattern = Pattern.compile(keywordRegex);
 			Pattern symbolPattern = Pattern.compile(symbolRegex);
@@ -116,6 +124,8 @@ public class Tokenizer {
 			Pattern stringConstantPattern = Pattern.compile(stringConstantRegex);
 			Pattern identifierPattern = Pattern.compile(identifierRegex);
 			Pattern oneLineCommentPattern = Pattern.compile(oneLineCommentRegex);
+			this.multiLineCommentOpenPattern = Pattern.compile(multiLineCommentOpenRegex);
+			Pattern multiLineCommentClosePattern = Pattern.compile(multiLineCommentCloseRegex);
 			
 			this.patterns = new Pattern[6];
 			patterns[1] = keyWordPattern;
@@ -135,8 +145,11 @@ public class Tokenizer {
 		}
 		
 		public void newLine(String codeLine){
+//			System.out.println(codeLine);
 			
-			this.codeLine = preProcessor.preProcess(codeLine);
+			this.codeLine = codeLine.trim();//preProcessor.preProcess(codeLine);
+//			System.out.println(this.codeLine);
+			
 		}
 		
 		/**
@@ -144,15 +157,37 @@ public class Tokenizer {
 		 * @return the next element if exists. if EOL, return null.
 		 */
 		public Element getNextElement() {
+			
+			this.justFinishedMulticomment = false;
+			
 			if ((codeLine == null) || (codeLine.length() == 0)) {
 				return null;
 			}
+			
+			Matcher multilineCommentOpenMatcher = this.multiLineCommentOpenPattern.matcher(codeLine);
+			if (!insideMultilineComment && multilineCommentOpenMatcher.find() && multilineCommentOpenMatcher.start() == 0){
+				insideMultilineComment = true;
+			}
+			
+			if (insideMultilineComment){
+				if (codeLine.indexOf("*/") == -1){
+					this.codeLine = "";
+					return null;
+				}
+				this.codeLine = codeLine.substring(codeLine.indexOf("*/") + 2);
+				this.justFinishedMulticomment = true;
+				this.insideMultilineComment = false;
+				return null;
+			}
+			
+			
 			for (int i = 0; i < 6; i++) {
 
 				Matcher m = patterns[i].matcher(codeLine);
 
 				if (m.find() && m.start() == 0) {
 					
+					// one line comment start here
 					if(i == 0){
 						// comment to the end of the line
 						this.codeLine = "";
