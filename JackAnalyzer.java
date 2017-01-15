@@ -14,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** the purpose of this class is to read and write the IO*/
-public class IO {
+public class JackAnalyzer {
     private static final String BAD_FILE= "file could not been read or write into";
     private static final String FILE_NOT_EXISTS = "enter another file, since the path was wrong";
     private static final String XML = ".xml";
