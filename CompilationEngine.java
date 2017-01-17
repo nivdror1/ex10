@@ -421,6 +421,9 @@ public class CompilationEngine {
         rootElement.appendChild(term);
 
         if(this.currentElement.getTagName().matches(STRING_CONSTANT)){
+            if(this.currentElement.getTextContent().matches("  ")){
+                this.currentElement.setTextContent("");
+            }
             addElement(term,STRING_CONSTANT); //add the string constant
         }
         else {

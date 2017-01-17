@@ -102,7 +102,7 @@ public class Tokenizer {
 			String keywordRegex = "\\bclass\\b|\\bconstructor\\b|\\bfunction\\b|\\bmethod\\b|\\bfield\\b|\\bstatic\\b|\\bvar\\b|\\bint\\b|\\bchar\\b|\\bboolean\\b|\\bvoid\\b|\\btrue\\b|\\bfalse\\b|\\bnull\\b|\\bthis\\b|\\blet\\b|\\bdo\\b|\\bif\\b|\\belse\\b|\\bwhile\\b|\\breturn\\b";
 			String symbolRegex = "(\\.|\\{|\\}|\\(|\\)|;|\\,|\\[|\\]|\\*|\\-|\\+|/|&|<|>|=|~|\\|)";//\\.|\\{|\\}";//|(|)|[|]|*|-|/|&|<|>|=|~";//TODO add '|'
 			String integerConstantRegex = "[0-9]+";
-			String stringConstantRegex = "\"[^\"\n]+\""; // TODO
+			String stringConstantRegex = "(\"[^\"\n]+\")|(\"\")"; // TODO
 			String identifierRegex = "\\b\\w+\\b";//"[A-Za-z]+";//|_][A-Z|a-z|_|0-9]*";
 			String oneLineCommentRegex = "//.*";
 			String multiLineCommentOpenRegex = "/\\*.*";
